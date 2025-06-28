@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Package, Calendar, DollarSign, Truck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ShoppingCart, Package, Calendar, DollarSign, Truck, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react';
+import ManualOrderModal from './ManualOrderModal';
 
 interface Order {
   id: string;
@@ -19,6 +20,8 @@ interface Order {
   }>;
   vendor: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
+  isManualEntry?: boolean;
+  hasApiIntegration?: boolean;
 }
 
 interface OrdersSectionProps {
@@ -27,6 +30,11 @@ interface OrdersSectionProps {
 
 const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed'>('all');
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [minHeight, setMinHeight] = useState<number>(0);
 
   // Mock orders data - in real app, this would come from ERP integration
   const mockOrders: Order[] = [
@@ -55,7 +63,8 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
         }
       ],
       vendor: 'IPEC Parts Supply',
-      priority: 'medium'
+      priority: 'medium',
+      hasApiIntegration: true
     },
     {
       id: 'ORD-002',
@@ -75,7 +84,8 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
         }
       ],
       vendor: 'Milton Roy Direct',
-      priority: 'high'
+      priority: 'high',
+      hasApiIntegration: true
     },
     {
       id: 'ORD-003',
@@ -95,9 +105,45 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
         }
       ],
       vendor: 'Emergency Parts LLC',
-      priority: 'critical'
+      priority: 'critical',
+      hasApiIntegration: true
+    },
+    {
+      id: 'ORD-004',
+      orderNumber: 'MANUAL-001',
+      type: 'parts',
+      status: 'delivered',
+      orderDate: '2024-12-10',
+      deliveredDate: '2024-12-12',
+      totalAmount: 325.00,
+      items: [
+        {
+          partNumber: 'LOCAL-GASKET-01',
+          description: 'Replacement Gasket Set - Local Purchase',
+          quantity: 1,
+          unitPrice: 325.00,
+          isWearItem: true
+        }
+      ],
+      vendor: 'Local Hardware Store',
+      priority: 'medium',
+      isManualEntry: true,
+      hasApiIntegration: false
     }
   ];
+
+  // Initialize orders
+  useEffect(() => {
+    setOrders(mockOrders);
+  }, []);
+
+  // Calculate minimum height to prevent jolting
+  useEffect(() => {
+    if (contentRef.current) {
+      const allOrdersHeight = contentRef.current.scrollHeight;
+      setMinHeight(Math.max(allOrdersHeight, 400)); // Minimum 400px
+    }
+  }, [orders]);
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
@@ -176,7 +222,7 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
     }).format(amount);
   };
 
-  const filteredOrders = mockOrders.filter(order => {
+  const filteredOrders = orders.filter(order => {
     switch (activeTab) {
       case 'pending':
         return ['pending', 'approved', 'shipped'].includes(order.status);
@@ -187,13 +233,47 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
     }
   });
 
-  const totalSpent = mockOrders
+  const totalSpent = orders
     .filter(order => order.status === 'delivered')
     .reduce((sum, order) => sum + order.totalAmount, 0);
 
-  const pendingValue = mockOrders
+  const pendingValue = orders
     .filter(order => ['pending', 'approved', 'shipped'].includes(order.status))
     .reduce((sum, order) => sum + order.totalAmount, 0);
+
+  const handleAddManualOrder = async (orderData: any) => {
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newOrder: Order = {
+        id: `MANUAL-${Date.now()}`,
+        orderNumber: `MANUAL-${String(orders.filter(o => o.isManualEntry).length + 1).padStart(3, '0')}`,
+        type: orderData.type,
+        status: orderData.status,
+        orderDate: orderData.orderDate,
+        deliveredDate: orderData.status === 'delivered' ? orderData.deliveredDate : undefined,
+        totalAmount: orderData.items.reduce((sum: number, item: any) => sum + (item.quantity * item.unitPrice), 0),
+        items: orderData.items,
+        vendor: orderData.vendor,
+        priority: orderData.priority,
+        isManualEntry: true,
+        hasApiIntegration: false
+      };
+      
+      setOrders(prev => [newOrder, ...prev]);
+      setShowManualModal(false);
+      
+      console.log('Manual order added:', newOrder);
+      
+    } catch (error) {
+      console.error('Failed to add manual order:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg">
@@ -204,16 +284,27 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
             Parts Orders & Consumption
           </h2>
           
-          {/* Summary Stats */}
-          <div className="flex items-center space-x-6 text-sm">
-            <div className="text-center">
-              <div className="text-lg font-semibold text-green-600">{formatCurrency(totalSpent)}</div>
-              <div className="text-gray-500">Total Spent</div>
+          <div className="flex items-center space-x-4">
+            {/* Summary Stats */}
+            <div className="flex items-center space-x-6 text-sm">
+              <div className="text-center">
+                <div className="text-lg font-semibold text-green-600">{formatCurrency(totalSpent)}</div>
+                <div className="text-gray-500">Total Spent</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-blue-600">{formatCurrency(pendingValue)}</div>
+                <div className="text-gray-500">Pending Orders</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold text-blue-600">{formatCurrency(pendingValue)}</div>
-              <div className="text-gray-500">Pending Orders</div>
-            </div>
+            
+            {/* Add Manual Order Button */}
+            <button
+              onClick={() => setShowManualModal(true)}
+              className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Manual Entry
+            </button>
           </div>
         </div>
         
@@ -221,21 +312,21 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
         <div className="mt-4">
           <nav className="flex space-x-8" aria-label="Tabs">
             {[
-              { id: 'all', label: 'All Orders', count: mockOrders.length },
-              { id: 'pending', label: 'Pending', count: mockOrders.filter(o => ['pending', 'approved', 'shipped'].includes(o.status)).length },
-              { id: 'completed', label: 'Completed', count: mockOrders.filter(o => ['delivered', 'cancelled'].includes(o.status)).length }
+              { id: 'all', label: 'All Orders', count: orders.length },
+              { id: 'pending', label: 'Pending', count: orders.filter(o => ['pending', 'approved', 'shipped'].includes(o.status)).length },
+              { id: 'completed', label: 'Completed', count: orders.filter(o => ['delivered', 'cancelled'].includes(o.status)).length }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors duration-200 ${
                   activeTab === tab.id
                     ? 'border-green-500 text-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors duration-200 ${
                   activeTab === tab.id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
                   {tab.count}
@@ -246,7 +337,12 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
         </div>
       </div>
 
-      <div className="p-6">
+      {/* Content with fixed minimum height to prevent jolting */}
+      <div 
+        ref={contentRef}
+        className="p-6 transition-all duration-300 ease-in-out"
+        style={{ minHeight: `${minHeight}px` }}
+      >
         {filteredOrders.length > 0 ? (
           <div className="space-y-4">
             {filteredOrders.map((order) => (
@@ -256,9 +352,21 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
                     <div className="flex items-center space-x-2">
                       {getTypeIcon(order.type)}
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">
-                          {order.orderNumber}
-                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            {order.orderNumber}
+                          </h3>
+                          {order.isManualEntry && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Manual Entry
+                            </span>
+                          )}
+                          {order.hasApiIntegration && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              ERP Sync
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500">
                           Ordered {formatDate(order.orderDate)} • {order.vendor}
                         </p>
@@ -332,13 +440,13 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               {activeTab === 'pending' ? 'No Pending Orders' : 
                activeTab === 'completed' ? 'No Completed Orders' : 'No Orders Found'}
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-500 mb-4">
               {activeTab === 'pending' 
                 ? 'All orders for this asset have been completed.'
                 : activeTab === 'completed'
@@ -346,9 +454,28 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
                 : 'No parts orders have been placed for this asset.'
               }
             </p>
+            
+            {activeTab === 'all' && (
+              <button
+                onClick={() => setShowManualModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First Order
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {/* Manual Order Modal */}
+      <ManualOrderModal
+        isOpen={showManualModal}
+        onClose={() => setShowManualModal(false)}
+        onSave={handleAddManualOrder}
+        isLoading={isLoading}
+        assetId={assetId}
+      />
     </div>
   );
 };
