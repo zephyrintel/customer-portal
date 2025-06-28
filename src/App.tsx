@@ -15,9 +15,8 @@ function App() {
           <Route path="assets/:id" element={<AssetDetail />} />
           <Route path="maintenance" element={<div className="p-8"><h1 className="text-2xl font-bold">Maintenance Page</h1><p>Coming soon...</p></div>} />
           <Route path="orders" element={<div className="p-8"><h1 className="text-2xl font-bold">Parts Orders Page</h1><p>Coming soon...</p></div>} />
-          <Route path="analytics" element={<div className="p-8"><h1 className="text-2xl font-bold">Analytics Page</h1><p>Coming soon...</p></div>} />
+          <Route path="documentation" element={<div className="p-8"><h1 className="text-2xl font-bold">Documentation Page</h1><p>Coming soon...</p></div>} />
           <Route path="notifications" element={<div className="p-8"><h1 className="text-2xl font-bold">Notifications Page</h1><p>Coming soon...</p></div>} />
-          <Route path="settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Settings Page</h1><p>Coming soon...</p></div>} />
           <Route path="activity" element={<div className="p-8"><h1 className="text-2xl font-bold">Activity Page</h1><p>Coming soon...</p></div>} />
         </Route>
       </Routes>

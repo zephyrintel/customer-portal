@@ -11,7 +11,7 @@ import {
   Shield,
   Wrench,
   FileText,
-  Settings
+  BookOpen
 } from 'lucide-react';
 import StatCard from '../components/Dashboard/StatCard';
 import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
@@ -108,7 +108,7 @@ const DashboardPage: React.FC = () => {
       title: 'Configure Notifications',
       description: 'Set up alerts for maintenance due dates and critical issues',
       completed: false,
-      action: () => navigate('/settings')
+      action: () => navigate('/notifications')
     }
   ];
 
@@ -155,16 +155,6 @@ const DashboardPage: React.FC = () => {
                 <span>•</span>
                 <span>Last login: Today at 9:24 AM</span>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => navigate('/settings')}
-                className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </button>
             </div>
           </div>
         </div>
@@ -329,23 +319,23 @@ const DashboardPage: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate('/analytics')}
+                  onClick={() => navigate('/documentation')}
                   className="w-full flex items-center space-x-3 p-3 text-left rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
                 >
                   <div className="p-2 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors duration-200">
-                    <TrendingUp className="w-4 h-4 text-purple-600" />
+                    <BookOpen className="w-4 h-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">View Analytics</p>
-                    <p className="text-xs text-gray-500">Equipment performance insights</p>
+                    <p className="text-sm font-medium text-gray-900">View Documentation</p>
+                    <p className="text-xs text-gray-500">Manuals and technical docs</p>
                   </div>
                 </button>
               </div>
             </div>
 
-            {/* System Status */}
+            {/* Integration Status */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Integration Status</h3>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -359,7 +349,7 @@ const DashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">Parts Integration</span>
+                    <span className="text-sm text-gray-700">NetSuite Integration</span>
                   </div>
                   <span className="text-xs text-green-600 font-medium">Connected</span>
                 </div>

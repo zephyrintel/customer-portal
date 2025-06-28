@@ -5,11 +5,10 @@ import {
   Package, 
   Calendar, 
   FileText, 
-  Settings, 
   ChevronLeft, 
   ChevronRight,
   Wrench,
-  BarChart3,
+  BookOpen,
   Bell
 } from 'lucide-react';
 
@@ -51,10 +50,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       badge: '2'
     },
     { 
-      id: 'analytics', 
-      label: 'Analytics', 
-      icon: BarChart3, 
-      path: '/analytics',
+      id: 'documentation', 
+      label: 'Documentation', 
+      icon: BookOpen, 
+      path: '/documentation',
       badge: null
     },
     { 
@@ -146,21 +145,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           );
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <Link
-          to="/settings"
-          className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group ${
-            isActive('/settings') ? 'bg-blue-50 text-blue-700 border border-blue-200' : ''
-          }`}
-        >
-          <Settings className={`w-5 h-5 flex-shrink-0 ${
-            isActive('/settings') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
-          }`} />
-          {!isCollapsed && <span>Settings</span>}
-        </Link>
-      </div>
     </div>
   );
 };
