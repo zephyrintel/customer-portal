@@ -16,13 +16,15 @@ import {
   AlertTriangle,
   CheckCircle,
   Upload,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { mockAssets } from '../data/mockData';
 import { Asset, Documentation, DocumentType } from '../types/Asset';
 import WearComponentCard from './WearComponents/WearComponentCard';
 import DocumentItem from './Documentation/DocumentItem';
 import DocumentUpload from './Documentation/DocumentUpload';
+import DocumentEditModal from './Documentation/DocumentEditModal';
 import EmptyDocumentationState from './Documentation/EmptyDocumentationState';
 import BOMTable from './BillOfMaterials/BOMTable';
 
@@ -32,6 +34,8 @@ const AssetDetail: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [documents, setDocuments] = useState<Documentation[]>([]);
+  const [editingDocument, setEditingDocument] = useState<Documentation | null>(null);
+  const [isEditLoading, setIsEditLoading] = useState(false);
   
   // Find the asset from mock data
   const asset: Asset | undefined = mockAssets.find(a => a.id === id);
@@ -198,8 +202,32 @@ const AssetDetail: React.FC = () => {
   };
 
   const handleEditDocument = (document: Documentation) => {
-    console.log('Edit document:', document);
-    // TODO: Implement document editing
+    setEditingDocument(document);
+  };
+
+  const handleSaveDocument = async (updatedDocument: Documentation) => {
+    setIsEditLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the document in the list
+      setDocuments(prev => 
+        prev.map(doc => 
+          doc.id === updatedDocument.id ? updatedDocument : doc
+        )
+      );
+      
+      setEditingDocument(null);
+      console.log('Document updated:', updatedDocument);
+      
+    } catch (error) {
+      console.error('Failed to update document:', error);
+      // TODO: Show error message to user
+    } finally {
+      setIsEditLoading(false);
+    }
   };
 
   const handleDeleteDocument = (documentId: string) => {
@@ -537,6 +565,15 @@ const AssetDetail: React.FC = () => {
         {activeTab === 'bom' && (
           <BOMTable items={asset.billOfMaterials} />
         )}
+
+        {/* Document Edit Modal */}
+        <DocumentEditModal
+          isOpen={!!editingDocument}
+          onClose={() => setEditingDocument(null)}
+          document={editingDocument}
+          onSave={handleSaveDocument}
+          isLoading={isEditLoading}
+        />
       </div>
     </div>
   );
