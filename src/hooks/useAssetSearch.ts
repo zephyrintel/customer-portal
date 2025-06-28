@@ -230,25 +230,7 @@ export const useAssetSearch = (assets: Asset[]) => {
     const suggestions: SearchSuggestion[] = [];
     const lowerTerm = debouncedSearchTerm.toLowerCase();
 
-    // Quick filter chips
-    const quickFilters = [
-      { id: 'maintenance-due', label: '🔧 Maintenance Due', searchTerm: 'maintenance due', icon: '🔧' },
-      { id: 'critical-assets', label: '⚠️ Critical Assets', searchTerm: 'critical assets', icon: '⚠️' },
-      { id: 'pumps', label: '💧 Pumps', searchTerm: 'pumps', icon: '💧' },
-      { id: 'compressors', label: '💨 Compressors', searchTerm: 'compressors', icon: '💨' },
-      { id: 'in-operation', label: '✅ In Operation', searchTerm: 'in operation', icon: '✅' },
-      { id: 'not-in-use', label: '❌ Not In Use', searchTerm: 'not in use', icon: '❌' }
-    ];
-
-    // Show relevant quick filters
-    if (!debouncedSearchTerm || lowerTerm.length < 3) {
-      suggestions.push(...quickFilters.map(filter => ({
-        ...filter,
-        type: 'chip' as const
-      })));
-    }
-
-    // Recent searches
+    // Only show recent searches when no search term is entered
     if (!debouncedSearchTerm) {
       const recentSearches = getRecentSearches();
       suggestions.push(...recentSearches.map(search => ({
@@ -260,7 +242,7 @@ export const useAssetSearch = (assets: Asset[]) => {
       })));
     }
 
-    // Pattern suggestions based on current input
+    // Pattern suggestions based on current input (only when user is typing)
     if (debouncedSearchTerm && debouncedSearchTerm.length >= 2) {
       const parsed = parseSearchTerm(debouncedSearchTerm);
       
