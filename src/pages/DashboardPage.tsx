@@ -332,37 +332,6 @@ const DashboardPage: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {/* Integration Status */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Integration Status</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">Equipment Monitoring</span>
-                  </div>
-                  <span className="text-xs text-green-600 font-medium">Online</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">NetSuite Integration</span>
-                  </div>
-                  <span className="text-xs text-green-600 font-medium">Connected</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">Maintenance Sync</span>
-                  </div>
-                  <span className="text-xs text-yellow-600 font-medium">Syncing</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
