@@ -1,0 +1,356 @@
+import React, { useState } from 'react';
+import { ShoppingCart, Package, Calendar, DollarSign, Truck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  type: 'parts' | 'maintenance' | 'emergency';
+  status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'cancelled';
+  orderDate: string;
+  expectedDelivery?: string;
+  deliveredDate?: string;
+  totalAmount: number;
+  items: Array<{
+    partNumber: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    isWearItem?: boolean;
+  }>;
+  vendor: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+}
+
+interface OrdersSectionProps {
+  assetId: string;
+}
+
+const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed'>('all');
+
+  // Mock orders data - in real app, this would come from ERP integration
+  const mockOrders: Order[] = [
+    {
+      id: 'ORD-001',
+      orderNumber: 'PO-2024-1234',
+      type: 'parts',
+      status: 'shipped',
+      orderDate: '2024-12-15',
+      expectedDelivery: '2024-12-22',
+      totalAmount: 1250.00,
+      items: [
+        {
+          partNumber: '55916',
+          description: 'SHIM FASTENAL NUMBER 7041808',
+          quantity: 2,
+          unitPrice: 45.00,
+          isWearItem: true
+        },
+        {
+          partNumber: '4090064020',
+          description: 'CUP - RACE',
+          quantity: 1,
+          unitPrice: 1160.00,
+          isWearItem: true
+        }
+      ],
+      vendor: 'IPEC Parts Supply',
+      priority: 'medium'
+    },
+    {
+      id: 'ORD-002',
+      orderNumber: 'PO-2024-1189',
+      type: 'maintenance',
+      status: 'delivered',
+      orderDate: '2024-11-28',
+      deliveredDate: '2024-12-05',
+      totalAmount: 850.00,
+      items: [
+        {
+          partNumber: '2120056074',
+          description: 'POPPET RELIEF VALVE NYLON RA',
+          quantity: 1,
+          unitPrice: 850.00,
+          isWearItem: false
+        }
+      ],
+      vendor: 'Milton Roy Direct',
+      priority: 'high'
+    },
+    {
+      id: 'ORD-003',
+      orderNumber: 'PO-2024-1456',
+      type: 'emergency',
+      status: 'pending',
+      orderDate: '2024-12-18',
+      expectedDelivery: '2024-12-20',
+      totalAmount: 2100.00,
+      items: [
+        {
+          partNumber: '54002',
+          description: 'HOUSING MROY A SIMPLEX LG HEAD',
+          quantity: 1,
+          unitPrice: 2100.00,
+          isWearItem: false
+        }
+      ],
+      vendor: 'Emergency Parts LLC',
+      priority: 'critical'
+    }
+  ];
+
+  const getStatusIcon = (status: Order['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'approved':
+        return <CheckCircle className="w-4 h-4 text-blue-600" />;
+      case 'shipped':
+        return <Truck className="w-4 h-4 text-purple-600" />;
+      case 'delivered':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'cancelled':
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: Order['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'approved':
+        return 'bg-blue-100 text-blue-800';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority: Order['priority']) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTypeIcon = (type: Order['type']) => {
+    switch (type) {
+      case 'parts':
+        return <Package className="w-4 h-4" />;
+      case 'maintenance':
+        return <Calendar className="w-4 h-4" />;
+      case 'emergency':
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <ShoppingCart className="w-4 h-4" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const filteredOrders = mockOrders.filter(order => {
+    switch (activeTab) {
+      case 'pending':
+        return ['pending', 'approved', 'shipped'].includes(order.status);
+      case 'completed':
+        return ['delivered', 'cancelled'].includes(order.status);
+      default:
+        return true;
+    }
+  });
+
+  const totalSpent = mockOrders
+    .filter(order => order.status === 'delivered')
+    .reduce((sum, order) => sum + order.totalAmount, 0);
+
+  const pendingValue = mockOrders
+    .filter(order => ['pending', 'approved', 'shipped'].includes(order.status))
+    .reduce((sum, order) => sum + order.totalAmount, 0);
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+            <ShoppingCart className="w-5 h-5 mr-2 text-green-600" />
+            Parts Orders & Consumption
+          </h2>
+          
+          {/* Summary Stats */}
+          <div className="flex items-center space-x-6 text-sm">
+            <div className="text-center">
+              <div className="text-lg font-semibold text-green-600">{formatCurrency(totalSpent)}</div>
+              <div className="text-gray-500">Total Spent</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-blue-600">{formatCurrency(pendingValue)}</div>
+              <div className="text-gray-500">Pending Orders</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Tabs */}
+        <div className="mt-4">
+          <nav className="flex space-x-8" aria-label="Tabs">
+            {[
+              { id: 'all', label: 'All Orders', count: mockOrders.length },
+              { id: 'pending', label: 'Pending', count: mockOrders.filter(o => ['pending', 'approved', 'shipped'].includes(o.status)).length },
+              { id: 'completed', label: 'Completed', count: mockOrders.filter(o => ['delivered', 'cancelled'].includes(o.status)).length }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  activeTab === tab.id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {filteredOrders.length > 0 ? (
+          <div className="space-y-4">
+            {filteredOrders.map((order) => (
+              <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      {getTypeIcon(order.type)}
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {order.orderNumber}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          Ordered {formatDate(order.orderDate)} • {order.vendor}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(order.priority)}`}>
+                      {order.priority.charAt(0).toUpperCase() + order.priority.slice(1)}
+                    </span>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                      {getStatusIcon(order.status)}
+                      <span className="ml-1">{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="mb-3">
+                  <div className="space-y-2">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm bg-gray-50 rounded p-2">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-xs text-gray-600">{item.partNumber}</span>
+                            {item.isWearItem && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                Wear Item
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-900 mt-1">{item.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">
+                            {item.quantity} × {formatCurrency(item.unitPrice)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            = {formatCurrency(item.quantity * item.unitPrice)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Order Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    {order.expectedDelivery && order.status !== 'delivered' && (
+                      <span className="flex items-center space-x-1">
+                        <Truck className="w-3 h-3" />
+                        <span>Expected: {formatDate(order.expectedDelivery)}</span>
+                      </span>
+                    )}
+                    {order.deliveredDate && (
+                      <span className="flex items-center space-x-1">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Delivered: {formatDate(order.deliveredDate)}</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold text-gray-900">
+                      {formatCurrency(order.totalAmount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {activeTab === 'pending' ? 'No Pending Orders' : 
+               activeTab === 'completed' ? 'No Completed Orders' : 'No Orders Found'}
+            </h3>
+            <p className="text-gray-500">
+              {activeTab === 'pending' 
+                ? 'All orders for this asset have been completed.'
+                : activeTab === 'completed'
+                ? 'No orders have been completed for this asset yet.'
+                : 'No parts orders have been placed for this asset.'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default OrdersSection;

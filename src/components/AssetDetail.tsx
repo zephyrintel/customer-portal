@@ -26,6 +26,8 @@ import DocumentItem from './Documentation/DocumentItem';
 import DocumentUpload from './Documentation/DocumentUpload';
 import DocumentEditModal from './Documentation/DocumentEditModal';
 import EmptyDocumentationState from './Documentation/EmptyDocumentationState';
+import AssetEditModal from './AssetEdit/AssetEditModal';
+import OrdersSection from './Orders/OrdersSection';
 import BOMTable from './BillOfMaterials/BOMTable';
 
 const AssetDetail: React.FC = () => {
@@ -36,9 +38,15 @@ const AssetDetail: React.FC = () => {
   const [documents, setDocuments] = useState<Documentation[]>([]);
   const [editingDocument, setEditingDocument] = useState<Documentation | null>(null);
   const [isEditLoading, setIsEditLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isAssetEditLoading, setIsAssetEditLoading] = useState(false);
+  const [asset, setAsset] = useState<Asset | undefined>();
   
   // Find the asset from mock data
-  const asset: Asset | undefined = mockAssets.find(a => a.id === id);
+  React.useEffect(() => {
+    const foundAsset = mockAssets.find(a => a.id === id);
+    setAsset(foundAsset);
+  }, [id]);
 
   // Initialize documents from asset data
   React.useEffect(() => {
@@ -165,8 +173,28 @@ const AssetDetail: React.FC = () => {
   const wearStatus = getWearComponentsStatus();
 
   const handleEdit = () => {
-    console.log('Edit button clicked for asset:', asset.id);
-    // TODO: Implement edit functionality
+    setShowEditModal(true);
+  };
+
+  const handleAssetSave = async (updatedAsset: Asset) => {
+    setIsAssetEditLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the asset
+      setAsset(updatedAsset);
+      setShowEditModal(false);
+      
+      console.log('Asset updated:', updatedAsset);
+      
+    } catch (error) {
+      console.error('Failed to update asset:', error);
+      // TODO: Show error message to user
+    } finally {
+      setIsAssetEditLoading(false);
+    }
   };
 
   const handleUpload = async (files: File[], documentType: DocumentType, customType?: string) => {
@@ -324,142 +352,147 @@ const AssetDetail: React.FC = () => {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <div className="bg-white rounded-lg shadow-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Hash className="w-5 h-5 mr-2 text-blue-600" />
-                  Basic Information
-                </h2>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Basic Information */}
+              <div className="bg-white rounded-lg shadow-lg">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <Hash className="w-5 h-5 mr-2 text-blue-600" />
+                    Basic Information
+                  </h2>
+                </div>
+                <div className="px-6 py-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Serial Number</label>
+                      <p className="text-sm font-mono bg-gray-50 px-3 py-2 rounded border">
+                        {asset.serialNumber}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Model Code</label>
+                      <p className="text-sm font-mono bg-gray-50 px-3 py-2 rounded border">
+                        {asset.modelCode}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Brand</label>
+                      <p className="text-sm text-gray-900 font-medium">{asset.brand}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Equipment Type</label>
+                      <p className="text-sm text-gray-900 font-medium">{asset.equipmentType}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1 flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Install Date
+                      </label>
+                      <p className="text-sm text-gray-900">{formatDate(asset.installDate)}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1 flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Last Maintenance
+                      </label>
+                      <p className="text-sm text-gray-900">{formatDate(asset.lastMaintenance)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="px-6 py-4 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Serial Number</label>
-                    <p className="text-sm font-mono bg-gray-50 px-3 py-2 rounded border">
-                      {asset.serialNumber}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Model Code</label>
-                    <p className="text-sm font-mono bg-gray-50 px-3 py-2 rounded border">
-                      {asset.modelCode}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Brand</label>
-                    <p className="text-sm text-gray-900 font-medium">{asset.brand}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Equipment Type</label>
-                    <p className="text-sm text-gray-900 font-medium">{asset.equipmentType}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1 flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      Install Date
-                    </label>
-                    <p className="text-sm text-gray-900">{formatDate(asset.installDate)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1 flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      Last Maintenance
-                    </label>
-                    <p className="text-sm text-gray-900">{formatDate(asset.lastMaintenance)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Location Information */}
-            <div className="bg-white rounded-lg shadow-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <MapPin className="w-5 h-5 mr-2 text-green-600" />
-                  Location
-                </h2>
-              </div>
-              <div className="px-6 py-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Facility</label>
-                  <p className="text-lg font-medium text-gray-900">{asset.location.facility}</p>
+              {/* Location Information */}
+              <div className="bg-white rounded-lg shadow-lg">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <MapPin className="w-5 h-5 mr-2 text-green-600" />
+                    Location
+                  </h2>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Area</label>
-                  <p className="text-lg font-medium text-gray-900">{asset.location.area}</p>
+                <div className="px-6 py-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Facility</label>
+                    <p className="text-lg font-medium text-gray-900">{asset.location.facility}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Area</label>
+                    <p className="text-lg font-medium text-gray-900">{asset.location.area}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Operating Conditions */}
-            <div className="bg-white rounded-lg shadow-lg lg:col-span-2">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Gauge className="w-5 h-5 mr-2 text-purple-600" />
-                  Operating Conditions
-                </h2>
-              </div>
-              <div className="px-6 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600 mb-1">
-                      {asset.operatingConditions.flowRate}
-                    </div>
-                    <div className="text-sm font-medium text-gray-600">Flow Rate</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600 mb-1">
-                      {asset.operatingConditions.pressure}
-                    </div>
-                    <div className="text-sm font-medium text-gray-600">Pressure</div>
-                  </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600 mb-1">
-                      {asset.operatingConditions.temperature}
-                    </div>
-                    <div className="text-sm font-medium text-gray-600">Temperature</div>
-                  </div>
-                  <div className={`text-center p-4 rounded-lg ${getFluidTypeColor(asset.operatingConditions.fluidType)}`}>
-                    <div className="text-2xl font-bold mb-1">
-                      {asset.operatingConditions.fluidType}
-                    </div>
-                    <div className="text-sm font-medium">Fluid Type</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes Section */}
-            {asset.notes && asset.notes.length > 0 && (
+              {/* Operating Conditions */}
               <div className="bg-white rounded-lg shadow-lg lg:col-span-2">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-900">Maintenance Notes</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <Gauge className="w-5 h-5 mr-2 text-purple-600" />
+                    Operating Conditions
+                  </h2>
                 </div>
                 <div className="px-6 py-4">
-                  <div className="space-y-4">
-                    {asset.notes.map((note, index) => (
-                      <div key={index} className="flex items-start p-4 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-500 mb-1">
-                            {formatDate(note.date)}
-                          </div>
-                          <div className="text-sm text-gray-700">{note.text}</div>
-                        </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600 mb-1">
+                        {asset.operatingConditions.flowRate}
                       </div>
-                    ))}
+                      <div className="text-sm font-medium text-gray-600">Flow Rate</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600 mb-1">
+                        {asset.operatingConditions.pressure}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">Pressure</div>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600 mb-1">
+                        {asset.operatingConditions.temperature}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">Temperature</div>
+                    </div>
+                    <div className={`text-center p-4 rounded-lg ${getFluidTypeColor(asset.operatingConditions.fluidType)}`}>
+                      <div className="text-2xl font-bold mb-1">
+                        {asset.operatingConditions.fluidType}
+                      </div>
+                      <div className="text-sm font-medium">Fluid Type</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Notes Section */}
+              {asset.notes && asset.notes.length > 0 && (
+                <div className="bg-white rounded-lg shadow-lg lg:col-span-2">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h2 className="text-xl font-semibold text-gray-900">Maintenance Notes</h2>
+                  </div>
+                  <div className="px-6 py-4">
+                    <div className="space-y-4">
+                      {asset.notes.map((note, index) => (
+                        <div key={index} className="flex items-start p-4 bg-gray-50 rounded-lg">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <div className="text-xs text-gray-500 mb-1">
+                              {formatDate(note.date)}
+                            </div>
+                            <div className="text-sm text-gray-700">{note.text}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Orders Section */}
+            <OrdersSection assetId={asset.id} />
           </div>
         )}
 
@@ -565,6 +598,15 @@ const AssetDetail: React.FC = () => {
         {activeTab === 'bom' && (
           <BOMTable items={asset.billOfMaterials} />
         )}
+
+        {/* Asset Edit Modal */}
+        <AssetEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          asset={asset}
+          onSave={handleAssetSave}
+          isLoading={isAssetEditLoading}
+        />
 
         {/* Document Edit Modal */}
         <DocumentEditModal
