@@ -14,20 +14,34 @@ import {
   Wrench,
   FileText,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Upload,
+  Plus
 } from 'lucide-react';
 import { mockAssets } from '../data/mockData';
-import { Asset } from '../types/Asset';
+import { Asset, Documentation, DocumentType } from '../types/Asset';
 import WearComponentCard from './WearComponents/WearComponentCard';
 import DocumentItem from './Documentation/DocumentItem';
+import DocumentUpload from './Documentation/DocumentUpload';
+import EmptyDocumentationState from './Documentation/EmptyDocumentationState';
 import BOMTable from './BillOfMaterials/BOMTable';
 
 const AssetDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<'overview' | 'wear-components' | 'documentation' | 'bom'>('overview');
+  const [showUpload, setShowUpload] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [documents, setDocuments] = useState<Documentation[]>([]);
   
   // Find the asset from mock data
   const asset: Asset | undefined = mockAssets.find(a => a.id === id);
+
+  // Initialize documents from asset data
+  React.useEffect(() => {
+    if (asset) {
+      setDocuments(asset.documentation);
+    }
+  }, [asset]);
 
   if (!asset) {
     return (
@@ -151,6 +165,48 @@ const AssetDetail: React.FC = () => {
     // TODO: Implement edit functionality
   };
 
+  const handleUpload = async (files: File[], documentType: DocumentType, customType?: string) => {
+    setIsUploading(true);
+    
+    try {
+      // Simulate upload process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create new document entries
+      const newDocuments: Documentation[] = files.map((file, index) => ({
+        id: `DOC-${Date.now()}-${index}`,
+        title: file.name,
+        type: documentType === 'Other' ? (customType as DocumentType) : documentType,
+        url: URL.createObjectURL(file), // In real app, this would be the uploaded file URL
+        uploadDate: new Date().toISOString(),
+        fileSize: file.size,
+        tags: []
+      }));
+      
+      // Add to documents list
+      setDocuments(prev => [...prev, ...newDocuments]);
+      setShowUpload(false);
+      
+      console.log('Documents uploaded:', newDocuments);
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+      // TODO: Show error message to user
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleEditDocument = (document: Documentation) => {
+    console.log('Edit document:', document);
+    // TODO: Implement document editing
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+    console.log('Document deleted:', documentId);
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', count: null },
     { 
@@ -159,7 +215,7 @@ const AssetDetail: React.FC = () => {
       count: asset.wearComponents.length,
       hasAlert: wearStatus && (wearStatus.overdueCount > 0 || wearStatus.dueSoonCount > 0)
     },
-    { id: 'documentation', label: 'Documentation', count: asset.documentation.length },
+    { id: 'documentation', label: 'Documentation', count: documents.length },
     { id: 'bom', label: 'Bill of Materials', count: asset.billOfMaterials.length }
   ];
 
@@ -416,17 +472,64 @@ const AssetDetail: React.FC = () => {
         )}
 
         {activeTab === 'documentation' && (
-          <div className="space-y-4">
-            {asset.documentation.length > 0 ? (
-              asset.documentation.map((doc) => (
-                <DocumentItem key={doc.id} document={doc} />
-              ))
+          <div className="space-y-6">
+            {documents.length > 0 || showUpload ? (
+              <>
+                {/* Header with Upload Button */}
+                {documents.length > 0 && !showUpload && (
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Documentation ({documents.length})
+                    </h3>
+                    <button
+                      onClick={() => setShowUpload(true)}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Documentation
+                    </button>
+                  </div>
+                )}
+
+                {/* Upload Component */}
+                {showUpload && (
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Upload New Documentation</h3>
+                      <button
+                        onClick={() => setShowUpload(false)}
+                        disabled={isUploading}
+                        className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <DocumentUpload
+                      onUpload={handleUpload}
+                      isUploading={isUploading}
+                    />
+                  </div>
+                )}
+
+                {/* Documents List */}
+                {documents.length > 0 && (
+                  <div className="space-y-4">
+                    {documents.map((doc) => (
+                      <DocumentItem 
+                        key={doc.id} 
+                        document={doc}
+                        onEdit={handleEditDocument}
+                        onDelete={handleDeleteDocument}
+                        showActions={true}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Documentation Available</h3>
-                <p className="text-gray-500">No documentation has been uploaded for this asset.</p>
-              </div>
+              <EmptyDocumentationState
+                onUploadClick={() => setShowUpload(true)}
+              />
             )}
           </div>
         )}

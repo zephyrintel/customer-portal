@@ -29,6 +29,16 @@ export type CriticalityLevel =
   | "Medium" 
   | "Low";
 
+export type DocumentType = 
+  | "Operating Manual"
+  | "Maintenance Guide" 
+  | "Safety Instructions"
+  | "Installation Manual"
+  | "Parts Catalog"
+  | "Technical Data" 
+  | "BOM"
+  | "Other";
+
 export interface WearComponent {
   partNumber: string;
   description: string;
@@ -39,9 +49,11 @@ export interface WearComponent {
 export interface Documentation {
   id: string;
   title: string;
-  type: "Manual" | "BOM" | "Technical Data" | "Service Bulletin" | "Other";
+  type: DocumentType;
   url: string;
   uploadDate: string;
+  fileSize?: number;
+  tags?: string[];
 }
 
 export interface BillOfMaterialsItem {

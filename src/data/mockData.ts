@@ -54,21 +54,27 @@ export const mockAssets: Asset[] = [
         title: "Mroy%20BOM.xlsx",
         type: "BOM",
         url: "/documents/mroy-bom.xlsx",
-        uploadDate: "2025-01-20"
+        uploadDate: "2025-01-20",
+        fileSize: 156000,
+        tags: ["parts", "inventory"]
       },
       {
         id: "DOC-002",
         title: "Global_mRoy_AandB_Manual.pdf",
-        type: "Manual",
+        type: "Operating Manual",
         url: "/documents/global-mroy-manual.pdf",
-        uploadDate: "2025-01-20"
+        uploadDate: "2025-01-20",
+        fileSize: 2400000,
+        tags: ["operation", "procedures"]
       },
       {
         id: "DOC-003",
         title: "mRoy_Data_Sheet.pdf",
         type: "Technical Data",
         url: "/documents/mroy-data-sheet.pdf",
-        uploadDate: "2025-01-20"
+        uploadDate: "2025-01-20",
+        fileSize: 1200000,
+        tags: ["specifications", "performance"]
       }
     ],
     
@@ -150,9 +156,11 @@ export const mockAssets: Asset[] = [
       {
         id: "DOC-004",
         title: "Atlas_Copco_Manual.pdf",
-        type: "Manual",
+        type: "Operating Manual",
         url: "/documents/atlas-copco-manual.pdf",
-        uploadDate: "2023-08-20"
+        uploadDate: "2023-08-20",
+        fileSize: 3200000,
+        tags: ["operation", "maintenance"]
       }
     ],
     
@@ -253,9 +261,11 @@ export const mockAssets: Asset[] = [
       {
         id: "DOC-005",
         title: "Alfa_Laval_Service_Manual.pdf",
-        type: "Manual",
+        type: "Maintenance Guide",
         url: "/documents/alfa-laval-manual.pdf",
-        uploadDate: "2023-12-05"
+        uploadDate: "2023-12-05",
+        fileSize: 2800000,
+        tags: ["maintenance", "service", "troubleshooting"]
       }
     ],
     
