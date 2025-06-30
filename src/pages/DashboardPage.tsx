@@ -85,7 +85,7 @@ const DashboardPage: React.FC = () => {
     viewEquipment: () => navigate('/assets'),
     scheduleMaintenance: () => navigate('/maintenance?action=schedule'),
     updateAssets: () => navigate('/assets?action=update-status'),
-    viewPartsOpportunities: () => navigate('/assets?filter=no-parts-activity'),
+    reviewPartsHistory: () => navigate('/assets?filter=no-parts-activity'),
     viewOrders: () => navigate('/orders'),
     viewDocumentation: () => navigate('/documentation'),
     viewActivity: () => navigate('/activity'),
@@ -156,7 +156,7 @@ const DashboardPage: React.FC = () => {
           <PartsEngagementCard
             totalAssets={metrics.totalEquipment}
             assetsWithNoPartsActivity={metrics.assetsWithNoPartsActivity}
-            onViewOpportunities={navigationHandlers.viewPartsOpportunities}
+            onViewOpportunities={navigationHandlers.reviewPartsHistory}
           />
         </div>
 
@@ -232,7 +232,7 @@ function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof moc
     return lastMaintenance < thirtyDaysAgo;
   }).length;
 
-  // Calculate assets with no parts activity
+  // Calculate assets with no parts activity - this is concerning from plant perspective
   const assetsWithNoPartsActivity = assets.filter(asset => {
     // Check if asset has wear components but no orders or replacements
     const hasWearComponents = asset.wearComponents.length > 0;
@@ -245,6 +245,7 @@ function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof moc
     const hasOrders = orders.some(order => order.assetId === asset.id);
     
     // Asset has no parts activity if it has wear components but no replacements or orders
+    // This could indicate neglected maintenance or missed preventive care opportunities
     return !hasReplacements && !hasOrders;
   }).length;
 
