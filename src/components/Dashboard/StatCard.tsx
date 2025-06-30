@@ -39,13 +39,26 @@ const StatCard: React.FC<StatCardProps> = ({
       action={action}
       className={className}
     >
-      {/* Centered metric display with consistent height */}
-      <div className="h-32 flex items-center justify-center">
-        <MetricDisplay
-          value={value}
-          subtitle={subtitle}
-          trend={trend}
-        />
+      {/* Consistent layout structure matching other cards */}
+      <div className="h-full flex flex-col justify-between">
+        {/* Metric Section - Fixed height: 96px */}
+        <div className="h-24 flex items-center justify-center">
+          <MetricDisplay
+            value={value}
+            subtitle={subtitle}
+            trend={trend}
+          />
+        </div>
+        
+        {/* Progress Bar Placeholder - Fixed height: 32px for alignment */}
+        <div className="h-8 flex items-center justify-center">
+          {/* Empty space to maintain alignment with other cards */}
+        </div>
+
+        {/* Status Section - Fixed height: 48px */}
+        <div className="h-12 flex items-center justify-center">
+          {/* Empty space to maintain alignment with other cards */}
+        </div>
       </div>
     </BaseCard>
   );

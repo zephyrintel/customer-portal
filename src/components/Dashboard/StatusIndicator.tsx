@@ -45,14 +45,12 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   const styles = getTypeStyles();
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      <div className="flex items-center justify-center">
-        <span className={`text-sm font-medium ${styles.text}`}>
+    <div className={`w-full ${className}`}>
+      <div className="flex items-center justify-center text-center">
+        <span className={`text-xs font-medium ${styles.text} leading-tight px-2`}>
           {message}
         </span>
       </div>
-
-      {/* Yellow box removed - no detail section displayed */}
     </div>
   );
 };

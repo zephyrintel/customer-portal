@@ -34,9 +34,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {showLabel && (
-        <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-          <span>{label}</span>
-          <span>{percentage}%</span>
+        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+          <span className="truncate">{label}</span>
+          <span className="ml-2 flex-shrink-0">{percentage}%</span>
         </div>
       )}
       <div className={`w-full bg-gray-200 rounded-full ${sizeClasses[size]}`}>

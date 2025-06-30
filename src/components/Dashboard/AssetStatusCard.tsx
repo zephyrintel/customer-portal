@@ -78,16 +78,17 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
         variant: getButtonVariant()
       }}
     >
-      <div className="space-y-6">
-        {/* Metric Display - Fixed height */}
-        <div className="h-20 flex items-center justify-center">
+      {/* Consistent layout structure with fixed heights */}
+      <div className="h-full flex flex-col justify-between">
+        {/* Metric Section - Fixed height: 96px */}
+        <div className="h-24 flex items-center justify-center">
           <MetricDisplay
             value={operatingAssets}
             subtitle={`of ${totalAssets} assets operating`}
           />
         </div>
         
-        {/* Progress Bar - Aligned position */}
+        {/* Progress Bar Section - Fixed height: 32px */}
         <div className="h-8 flex items-center">
           <ProgressBar
             percentage={operatingPercentage}
@@ -96,7 +97,7 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
           />
         </div>
 
-        {/* Status Indicator - Fixed height */}
+        {/* Status Section - Fixed height: 48px */}
         <div className="h-12 flex items-center justify-center">
           <StatusIndicator
             message={getStatusMessage()}

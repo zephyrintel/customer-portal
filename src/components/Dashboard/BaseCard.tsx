@@ -34,35 +34,36 @@ const BaseCard: React.FC<BaseCardProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 flex flex-col h-full ${className}`}>
-      {/* Header - Fixed height for consistency */}
-      <div className="p-6 pb-0">
-        <div className="flex items-center justify-center space-x-3 h-16">
-          <div className={`p-2 rounded-lg bg-gray-50 ${iconColor}`}>
-            <Icon className="w-5 h-5" />
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 ${className}`}>
+      {/* Fixed structure with consistent heights */}
+      <div className="h-full flex flex-col">
+        {/* Header Section - Fixed height: 80px */}
+        <div className="h-20 flex items-center justify-center px-6 pt-6">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg bg-gray-50 ${iconColor} flex-shrink-0`}>
+              <Icon className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-medium text-gray-600 text-center">{title}</h3>
           </div>
-          <h3 className="text-sm font-medium text-gray-600 text-center">{title}</h3>
         </div>
-      </div>
 
-      {/* Content - Flexible height with consistent spacing */}
-      <div className="px-6 py-6 flex-1 flex flex-col justify-between">
-        {children}
-      </div>
+        {/* Content Section - Flexible height with consistent internal structure */}
+        <div className="flex-1 px-6 pb-6">
+          {children}
+        </div>
 
-      {/* Action - Fixed height for consistency */}
-      {action && (
-        <div className="p-6 pt-0 border-t border-gray-100">
-          <div className="text-center">
+        {/* Action Section - Fixed height: 72px */}
+        {action && (
+          <div className="h-18 px-6 pb-6">
             <button
               onClick={action.onClick}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 w-full ${getButtonVariant(action.variant)}`}
+              className={`w-full h-10 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonVariant(action.variant)}`}
             >
               {action.label}
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
