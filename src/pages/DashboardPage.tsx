@@ -5,13 +5,8 @@ import {
   Calendar, 
   CheckCircle, 
   ShoppingCart, 
-  AlertTriangle,
-  TrendingUp,
-  Clock,
-  Shield,
-  Wrench,
   FileText,
-  BookOpen
+  Shield
 } from 'lucide-react';
 import StatCard from '../components/Dashboard/StatCard';
 import MaintenanceSchedulingCard from '../components/Dashboard/MaintenanceSchedulingCard';
@@ -25,39 +20,10 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  // Calculate dashboard metrics
-  const totalEquipment = mockAssets.length;
-  
-  // Calculate maintenance scheduling percentage
-  const assetsWithMaintenance = mockAssets.filter(asset => {
-    // Mock logic: Assets with recent maintenance or scheduled maintenance
-    // In real app, this would check for future scheduled maintenance dates
-    return asset.lastMaintenance !== null || asset.wearComponents.some(component => 
-      component.lastReplaced && component.recommendedReplacementInterval
-    );
-  }).length;
+  // Calculate dashboard metrics using reusable functions
+  const metrics = calculateDashboardMetrics(mockAssets);
 
-  // Calculate assets needing status updates (mock logic - in real app, track last update timestamps)
-  const assetsNeedingUpdate = mockAssets.filter(asset => {
-    // Mock: Assets without recent maintenance or status updates need attention
-    if (!asset.lastMaintenance) return true;
-    
-    const lastMaintenance = new Date(asset.lastMaintenance);
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    
-    return lastMaintenance < thirtyDaysAgo;
-  }).length;
-
-  // Mock: Days since last status update
-  const lastUpdateDays = 3;
-
-  // Mock data for open orders (would come from NetSuite integration)
-  const openOrders = 3;
-
-  // Count total documentation across all assets
-  const totalDocuments = mockAssets.reduce((total, asset) => total + asset.documentation.length, 0);
-
-  // Mock recent activities
+  // Mock recent activities - in production, this would come from an API
   const recentActivities = [
     {
       id: '1',
@@ -88,7 +54,7 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
-  // Onboarding steps
+  // Onboarding steps configuration
   const onboardingSteps = [
     {
       id: 'equipment-status',
@@ -113,36 +79,15 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
-  const handleScheduleMaintenance = () => {
-    navigate('/maintenance?action=schedule');
-  };
-
-  const handleUpdateAssets = () => {
-    navigate('/assets?action=update-status');
-  };
-
-  const handleLogMaintenance = () => {
-    navigate('/maintenance?tab=log');
-  };
-
-  const handleSetupPrevention = () => {
-    navigate('/maintenance?tab=preventive');
-  };
-
-  const handleViewEquipment = () => {
-    navigate('/assets');
-  };
-
-  const handleViewMaintenance = () => {
-    navigate('/maintenance');
-  };
-
-  const handleViewOrders = () => {
-    navigate('/orders');
-  };
-
-  const handleViewActivity = () => {
-    navigate('/activity');
+  // Navigation handlers - centralized for reusability
+  const navigationHandlers = {
+    viewEquipment: () => navigate('/assets'),
+    scheduleMaintenance: () => navigate('/maintenance?action=schedule'),
+    updateAssets: () => navigate('/assets?action=update-status'),
+    viewOrders: () => navigate('/orders'),
+    viewDocumentation: () => navigate('/documentation'),
+    viewActivity: () => navigate('/activity'),
+    setupPrevention: () => navigate('/maintenance?tab=preventive')
   };
 
   return (
@@ -156,7 +101,7 @@ const DashboardPage: React.FC = () => {
                 AcmePump Solutions Equipment Portal
               </h1>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <span>{totalEquipment} total equipment units</span>
+                <span>{metrics.totalEquipment} total equipment units</span>
                 <span>•</span>
                 <span>Last login: Today at 9:24 AM</span>
               </div>
@@ -178,7 +123,7 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           <StatCard
             title="Total Equipment"
-            value={totalEquipment}
+            value={metrics.totalEquipment}
             subtitle="Active units"
             icon={Package}
             iconColor="text-blue-600"
@@ -189,36 +134,36 @@ const DashboardPage: React.FC = () => {
             }}
             action={{
               label: "View Equipment",
-              onClick: handleViewEquipment
+              onClick: navigationHandlers.viewEquipment
             }}
           />
 
           <MaintenanceSchedulingCard
-            totalAssets={totalEquipment}
-            assetsWithMaintenance={assetsWithMaintenance}
-            onScheduleMaintenance={handleScheduleMaintenance}
+            totalAssets={metrics.totalEquipment}
+            assetsWithMaintenance={metrics.assetsWithMaintenance}
+            onScheduleMaintenance={navigationHandlers.scheduleMaintenance}
           />
 
           <AssetStatusCard
-            totalAssets={totalEquipment}
-            assetsNeedingUpdate={assetsNeedingUpdate}
-            lastUpdateDays={lastUpdateDays}
-            onUpdateAssets={handleUpdateAssets}
+            totalAssets={metrics.totalEquipment}
+            assetsNeedingUpdate={metrics.assetsNeedingUpdate}
+            lastUpdateDays={metrics.lastUpdateDays}
+            onUpdateAssets={navigationHandlers.updateAssets}
           />
         </div>
 
         {/* Secondary Stats Row - 2 columns for better spacing */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          {openOrders > 0 ? (
+          {metrics.openOrders > 0 ? (
             <StatCard
               title="Open Orders"
-              value={openOrders}
+              value={metrics.openOrders}
               subtitle="Parts orders in progress"
               icon={ShoppingCart}
               iconColor="text-purple-600"
               action={{
                 label: "View Orders",
-                onClick: handleViewOrders
+                onClick: navigationHandlers.viewOrders
               }}
             />
           ) : (
@@ -228,97 +173,72 @@ const DashboardPage: React.FC = () => {
               icon={Shield}
               iconColor="text-green-600"
               actionLabel="Set Up Prevention"
-              onAction={handleSetupPrevention}
+              onAction={navigationHandlers.setupPrevention}
             />
           )}
 
           <StatCard
             title="Documentation"
-            value={totalDocuments}
+            value={metrics.totalDocuments}
             subtitle="Documents available"
             icon={FileText}
             iconColor="text-indigo-600"
             action={{
               label: "Browse Docs",
-              onClick: () => navigate('/documentation')
+              onClick: navigationHandlers.viewDocumentation
             }}
           />
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activity - Takes up more space */}
-          <div className="lg:col-span-2">
-            <RecentActivityCard
-              activities={recentActivities}
-              onViewAll={handleViewActivity}
-            />
-          </div>
-
-          {/* Quick Actions */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate('/maintenance?action=schedule')}
-                  className="w-full flex items-center space-x-3 p-3 text-left rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
-                >
-                  <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors duration-200">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Schedule Maintenance</p>
-                    <p className="text-xs text-gray-500">Plan upcoming service work</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate('/orders?action=new')}
-                  className="w-full flex items-center space-x-3 p-3 text-left rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
-                >
-                  <div className="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors duration-200">
-                    <ShoppingCart className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Order Parts</p>
-                    <p className="text-xs text-gray-500">Request spare parts</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate('/assets?filter=critical')}
-                  className="w-full flex items-center space-x-3 p-3 text-left rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
-                >
-                  <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors duration-200">
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Critical Equipment</p>
-                    <p className="text-xs text-gray-500">Review high-priority assets</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate('/documentation')}
-                  className="w-full flex items-center space-x-3 p-3 text-left rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
-                >
-                  <div className="p-2 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors duration-200">
-                    <BookOpen className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">View Documentation</p>
-                    <p className="text-xs text-gray-500">Manuals and technical docs</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Recent Activity - Full width for better content display */}
+        <div className="mb-8">
+          <RecentActivityCard
+            activities={recentActivities}
+            onViewAll={navigationHandlers.viewActivity}
+          />
         </div>
       </div>
     </div>
   );
 };
+
+// Extracted utility function for calculating dashboard metrics
+function calculateDashboardMetrics(assets: typeof mockAssets) {
+  const totalEquipment = assets.length;
+  
+  // Calculate maintenance scheduling percentage
+  const assetsWithMaintenance = assets.filter(asset => {
+    // Assets with recent maintenance or scheduled maintenance
+    return asset.lastMaintenance !== null || asset.wearComponents.some(component => 
+      component.lastReplaced && component.recommendedReplacementInterval
+    );
+  }).length;
+
+  // Calculate assets needing status updates
+  const assetsNeedingUpdate = assets.filter(asset => {
+    if (!asset.lastMaintenance) return true;
+    
+    const lastMaintenance = new Date(asset.lastMaintenance);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    return lastMaintenance < thirtyDaysAgo;
+  }).length;
+
+  // Mock data - in production, these would come from APIs
+  const lastUpdateDays = 3;
+  const openOrders = 3;
+
+  // Count total documentation across all assets
+  const totalDocuments = assets.reduce((total, asset) => total + asset.documentation.length, 0);
+
+  return {
+    totalEquipment,
+    assetsWithMaintenance,
+    assetsNeedingUpdate,
+    lastUpdateDays,
+    openOrders,
+    totalDocuments
+  };
+}
 
 export default DashboardPage;
