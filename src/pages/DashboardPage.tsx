@@ -16,7 +16,6 @@ import {
 import StatCard from '../components/Dashboard/StatCard';
 import MaintenanceSchedulingCard from '../components/Dashboard/MaintenanceSchedulingCard';
 import AssetStatusCard from '../components/Dashboard/AssetStatusCard';
-import AssetKnowledgeCard from '../components/Dashboard/AssetKnowledgeCard';
 import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
 import OnboardingCard from '../components/Dashboard/OnboardingCard';
 import RecentActivityCard from '../components/Dashboard/RecentActivityCard';
@@ -51,11 +50,6 @@ const DashboardPage: React.FC = () => {
 
   // Mock: Days since last status update
   const lastUpdateDays = 3;
-
-  // Asset discovery metrics (mock - in real app, this could be based on facility size estimates)
-  const knownAssets = totalEquipment;
-  const estimatedTotal = Math.ceil(totalEquipment * 1.4); // Assume we're missing ~40% of assets
-  const completionPercentage = Math.round((knownAssets / estimatedTotal) * 100);
 
   // Mock data for open orders (would come from NetSuite integration)
   const openOrders = 3;
@@ -124,10 +118,6 @@ const DashboardPage: React.FC = () => {
     navigate('/assets?action=update-status');
   };
 
-  const handleDiscoverAssets = () => {
-    navigate('/assets?action=discover');
-  };
-
   const handleLogMaintenance = () => {
     navigate('/maintenance?tab=log');
   };
@@ -181,8 +171,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats Grid - Now 3 columns instead of 4 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           <StatCard
             title="Total Equipment"
             value={totalEquipment}
@@ -212,18 +202,100 @@ const DashboardPage: React.FC = () => {
             lastUpdateDays={lastUpdateDays}
             onUpdateAssets={handleUpdateAssets}
           />
+        </div>
 
-          <AssetKnowledgeCard
-            knownAssets={knownAssets}
-            estimatedTotal={estimatedTotal}
-            completionPercentage={completionPercentage}
-            onDiscoverAssets={handleDiscoverAssets}
-          />
+        {/* Secondary Stats Row - Open Orders gets its own prominent space */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+          {openOrders > 0 ? (
+            <StatCard
+              title="Open Orders"
+              value={openOrders}
+              subtitle="Parts orders in progress"
+              icon={ShoppingCart}
+              iconColor="text-purple-600"
+              action={{
+                label: "View Orders",
+                onClick: handleViewOrders
+              }}
+            />
+          ) : (
+            <EmptyStateCard
+              title="Your equipment is operating"
+              description="Within normal parameters"
+              icon={Shield}
+              iconColor="text-green-600"
+              actionLabel="Set Up Prevention"
+              onAction={handleSetupPrevention}
+            />
+          )}
+
+          {/* Additional metric cards can go here as the system grows */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+            <div className="text-center flex-1">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="p-2 rounded-lg bg-gray-50 text-green-600">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-medium text-gray-600">System Health</h3>
+              </div>
+              
+              <div className="space-y-1 mb-4">
+                <p className="text-3xl font-bold text-gray-900">98%</p>
+                <p className="text-sm text-gray-500">Overall uptime</p>
+              </div>
+              
+              <div className="flex items-center justify-center mb-4">
+                <span className="text-sm font-medium text-green-600">
+                  Excellent performance
+                </span>
+              </div>
+            </div>
+            
+            <div className="mt-auto pt-4 border-t border-gray-100 text-center">
+              <button
+                onClick={() => navigate('/assets?view=performance')}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+            <div className="text-center flex-1">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="p-2 rounded-lg bg-gray-50 text-blue-600">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-medium text-gray-600">Documentation</h3>
+              </div>
+              
+              <div className="space-y-1 mb-4">
+                <p className="text-3xl font-bold text-gray-900">12</p>
+                <p className="text-sm text-gray-500">Documents available</p>
+              </div>
+              
+              <div className="flex items-center justify-center mb-4">
+                <span className="text-sm font-medium text-blue-600">
+                  Manuals & guides ready
+                </span>
+              </div>
+            </div>
+            
+            <div className="mt-auto pt-4 border-t border-gray-100 text-center">
+              <button
+                onClick={() => navigate('/documentation')}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Browse Docs
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activity */}
+          {/* Recent Activity - Takes up more space */}
           <div className="lg:col-span-2">
             <RecentActivityCard
               activities={recentActivities}
