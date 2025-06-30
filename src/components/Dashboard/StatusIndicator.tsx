@@ -45,23 +45,18 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   const styles = getTypeStyles();
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-3 ${className}`}>
       <div className="flex items-center justify-center">
         <span className={`text-sm font-medium ${styles.text}`}>
           {message}
         </span>
       </div>
 
+      {/* Only show the yellow box with detail, no redundant plain text */}
       {detail && (
-        <div className="text-xs text-gray-600 text-center">
-          {detail}
-        </div>
-      )}
-
-      {Icon && (
         <div className={`text-xs rounded-lg p-2 ${styles.bg} ${styles.text} border ${styles.border}`}>
           <div className="flex items-center justify-center space-x-1">
-            <Icon className="w-3 h-3" />
+            {Icon && <Icon className="w-3 h-3" />}
             <span>{detail}</span>
           </div>
         </div>
