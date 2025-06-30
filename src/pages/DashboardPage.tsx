@@ -54,6 +54,9 @@ const DashboardPage: React.FC = () => {
   // Mock data for open orders (would come from NetSuite integration)
   const openOrders = 3;
 
+  // Count total documentation across all assets
+  const totalDocuments = mockAssets.reduce((total, asset) => total + asset.documentation.length, 0);
+
   // Mock recent activities
   const recentActivities = [
     {
@@ -171,7 +174,7 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Stats Grid - Now 3 columns instead of 4 */}
+        {/* Main Stats Grid - 3 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           <StatCard
             title="Total Equipment"
@@ -204,8 +207,8 @@ const DashboardPage: React.FC = () => {
           />
         </div>
 
-        {/* Secondary Stats Row - Open Orders gets its own prominent space */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+        {/* Secondary Stats Row - 2 columns for better spacing */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           {openOrders > 0 ? (
             <StatCard
               title="Open Orders"
@@ -229,68 +232,17 @@ const DashboardPage: React.FC = () => {
             />
           )}
 
-          {/* Additional metric cards can go here as the system grows */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
-            <div className="text-center flex-1">
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <div className="p-2 rounded-lg bg-gray-50 text-green-600">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-medium text-gray-600">System Health</h3>
-              </div>
-              
-              <div className="space-y-1 mb-4">
-                <p className="text-3xl font-bold text-gray-900">98%</p>
-                <p className="text-sm text-gray-500">Overall uptime</p>
-              </div>
-              
-              <div className="flex items-center justify-center mb-4">
-                <span className="text-sm font-medium text-green-600">
-                  Excellent performance
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-auto pt-4 border-t border-gray-100 text-center">
-              <button
-                onClick={() => navigate('/assets?view=performance')}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              >
-                View Details
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
-            <div className="text-center flex-1">
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <div className="p-2 rounded-lg bg-gray-50 text-blue-600">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-medium text-gray-600">Documentation</h3>
-              </div>
-              
-              <div className="space-y-1 mb-4">
-                <p className="text-3xl font-bold text-gray-900">12</p>
-                <p className="text-sm text-gray-500">Documents available</p>
-              </div>
-              
-              <div className="flex items-center justify-center mb-4">
-                <span className="text-sm font-medium text-blue-600">
-                  Manuals & guides ready
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-auto pt-4 border-t border-gray-100 text-center">
-              <button
-                onClick={() => navigate('/documentation')}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Browse Docs
-              </button>
-            </div>
-          </div>
+          <StatCard
+            title="Documentation"
+            value={totalDocuments}
+            subtitle="Documents available"
+            icon={FileText}
+            iconColor="text-indigo-600"
+            action={{
+              label: "Browse Docs",
+              onClick: () => navigate('/documentation')
+            }}
+          />
         </div>
 
         {/* Content Grid */}
