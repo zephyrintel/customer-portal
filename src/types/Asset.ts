@@ -63,6 +63,31 @@ export interface BillOfMaterialsItem {
   isWearItem: boolean;
 }
 
+export interface OrderItem {
+  partNumber: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  isWearItem?: boolean;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  assetId: string; // Links order to specific asset
+  type: 'parts' | 'maintenance' | 'emergency';
+  status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'cancelled';
+  orderDate: string;
+  expectedDelivery?: string;
+  deliveredDate?: string;
+  totalAmount: number;
+  items: OrderItem[];
+  vendor: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  isManualEntry?: boolean;
+  hasApiIntegration?: boolean;
+}
+
 export interface Asset {
   id: string;
   serialNumber: string;

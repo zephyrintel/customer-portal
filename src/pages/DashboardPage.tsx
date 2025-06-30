@@ -11,17 +11,18 @@ import {
 import StatCard from '../components/Dashboard/StatCard';
 import MaintenanceSchedulingCard from '../components/Dashboard/MaintenanceSchedulingCard';
 import AssetStatusCard from '../components/Dashboard/AssetStatusCard';
+import PartsEngagementCard from '../components/Dashboard/PartsEngagementCard';
 import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
 import OnboardingCard from '../components/Dashboard/OnboardingCard';
 import RecentActivityCard from '../components/Dashboard/RecentActivityCard';
-import { mockAssets } from '../data/mockData';
+import { mockAssets, mockOrders } from '../data/mockData';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(true);
 
   // Calculate dashboard metrics using reusable functions
-  const metrics = calculateDashboardMetrics(mockAssets);
+  const metrics = calculateDashboardMetrics(mockAssets, mockOrders);
 
   // Mock recent activities - in production, this would come from an API
   const recentActivities = [
@@ -84,6 +85,7 @@ const DashboardPage: React.FC = () => {
     viewEquipment: () => navigate('/assets'),
     scheduleMaintenance: () => navigate('/maintenance?action=schedule'),
     updateAssets: () => navigate('/assets?action=update-status'),
+    viewPartsOpportunities: () => navigate('/assets?filter=no-parts-activity'),
     viewOrders: () => navigate('/orders'),
     viewDocumentation: () => navigate('/documentation'),
     viewActivity: () => navigate('/activity'),
@@ -119,8 +121,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Stats Grid - 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+        {/* Main Stats Grid - 4 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Equipment"
             value={metrics.totalEquipment}
@@ -149,6 +151,12 @@ const DashboardPage: React.FC = () => {
             assetsNeedingUpdate={metrics.assetsNeedingUpdate}
             lastUpdateDays={metrics.lastUpdateDays}
             onUpdateAssets={navigationHandlers.updateAssets}
+          />
+
+          <PartsEngagementCard
+            totalAssets={metrics.totalEquipment}
+            assetsWithNoPartsActivity={metrics.assetsWithNoPartsActivity}
+            onViewOpportunities={navigationHandlers.viewPartsOpportunities}
           />
         </div>
 
@@ -203,7 +211,7 @@ const DashboardPage: React.FC = () => {
 };
 
 // Extracted utility function for calculating dashboard metrics
-function calculateDashboardMetrics(assets: typeof mockAssets) {
+function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof mockOrders) {
   const totalEquipment = assets.length;
   
   // Calculate maintenance scheduling percentage
@@ -224,9 +232,29 @@ function calculateDashboardMetrics(assets: typeof mockAssets) {
     return lastMaintenance < thirtyDaysAgo;
   }).length;
 
+  // Calculate assets with no parts activity
+  const assetsWithNoPartsActivity = assets.filter(asset => {
+    // Check if asset has wear components but no orders or replacements
+    const hasWearComponents = asset.wearComponents.length > 0;
+    if (!hasWearComponents) return false;
+    
+    // Check if any wear components have been replaced
+    const hasReplacements = asset.wearComponents.some(component => component.lastReplaced);
+    
+    // Check if asset has any orders
+    const hasOrders = orders.some(order => order.assetId === asset.id);
+    
+    // Asset has no parts activity if it has wear components but no replacements or orders
+    return !hasReplacements && !hasOrders;
+  }).length;
+
   // Mock data - in production, these would come from APIs
   const lastUpdateDays = 3;
-  const openOrders = 3;
+  
+  // Count open orders
+  const openOrders = orders.filter(order => 
+    ['pending', 'approved', 'shipped'].includes(order.status)
+  ).length;
 
   // Count total documentation across all assets
   const totalDocuments = assets.reduce((total, asset) => total + asset.documentation.length, 0);
@@ -235,6 +263,7 @@ function calculateDashboardMetrics(assets: typeof mockAssets) {
     totalEquipment,
     assetsWithMaintenance,
     assetsNeedingUpdate,
+    assetsWithNoPartsActivity,
     lastUpdateDays,
     openOrders,
     totalDocuments

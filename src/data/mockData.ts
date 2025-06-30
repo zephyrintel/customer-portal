@@ -1,4 +1,4 @@
-import { Asset } from '../types/Asset';
+import { Asset, Order } from '../types/Asset';
 
 export const mockAssets: Asset[] = [
   {
@@ -214,9 +214,23 @@ export const mockAssets: Asset[] = [
       fluidType: "Steam"
     },
     
-    wearComponents: [],
+    wearComponents: [
+      {
+        partNumber: "GF-IMPELLER-001",
+        description: "Pump Impeller Assembly",
+        recommendedReplacementInterval: "24 months",
+        lastReplaced: null
+      }
+    ],
     documentation: [],
-    billOfMaterials: [],
+    billOfMaterials: [
+      {
+        partNumber: "GF-IMPELLER-001",
+        description: "Pump Impeller Assembly",
+        quantity: 1,
+        isWearItem: true
+      }
+    ],
     
     imageUrl: null,
     notes: []
@@ -323,9 +337,23 @@ export const mockAssets: Asset[] = [
       fluidType: "Air"
     },
     
-    wearComponents: [],
+    wearComponents: [
+      {
+        partNumber: "ABB-BEARING-001",
+        description: "Motor Bearing Set",
+        recommendedReplacementInterval: "36 months",
+        lastReplaced: null
+      }
+    ],
     documentation: [],
-    billOfMaterials: [],
+    billOfMaterials: [
+      {
+        partNumber: "ABB-BEARING-001",
+        description: "Motor Bearing Set",
+        quantity: 2,
+        isWearItem: true
+      }
+    ],
     
     imageUrl: null,
     notes: [
@@ -334,5 +362,105 @@ export const mockAssets: Asset[] = [
         text: "Motor delivered and staged for installation"
       }
     ]
+  }
+];
+
+// Mock orders data linked to specific assets
+export const mockOrders: Order[] = [
+  {
+    id: 'ORD-001',
+    orderNumber: 'PO-2024-1234',
+    assetId: 'AST-001', // Centrifugal Pump Model X
+    type: 'parts',
+    status: 'shipped',
+    orderDate: '2024-12-15',
+    expectedDelivery: '2024-12-22',
+    totalAmount: 1250.00,
+    items: [
+      {
+        partNumber: '55916',
+        description: 'SHIM FASTENAL NUMBER 7041808',
+        quantity: 2,
+        unitPrice: 45.00,
+        isWearItem: true
+      },
+      {
+        partNumber: '4090064020',
+        description: 'CUP - RACE',
+        quantity: 1,
+        unitPrice: 1160.00,
+        isWearItem: true
+      }
+    ],
+    vendor: 'IPEC Parts Supply',
+    priority: 'medium',
+    hasApiIntegration: true
+  },
+  {
+    id: 'ORD-002',
+    orderNumber: 'PO-2024-1189',
+    assetId: 'AST-001', // Centrifugal Pump Model X
+    type: 'maintenance',
+    status: 'delivered',
+    orderDate: '2024-11-28',
+    deliveredDate: '2024-12-05',
+    totalAmount: 850.00,
+    items: [
+      {
+        partNumber: '2120056074',
+        description: 'POPPET RELIEF VALVE NYLON RA',
+        quantity: 1,
+        unitPrice: 850.00,
+        isWearItem: false
+      }
+    ],
+    vendor: 'Milton Roy Direct',
+    priority: 'high',
+    hasApiIntegration: true
+  },
+  {
+    id: 'ORD-003',
+    orderNumber: 'PO-2024-1456',
+    assetId: 'AST-004', // Heat Exchanger
+    type: 'emergency',
+    status: 'pending',
+    orderDate: '2024-12-18',
+    expectedDelivery: '2024-12-20',
+    totalAmount: 2100.00,
+    items: [
+      {
+        partNumber: 'AL-GASKET-001',
+        description: 'Heat Exchanger Gasket Set',
+        quantity: 1,
+        unitPrice: 2100.00,
+        isWearItem: true
+      }
+    ],
+    vendor: 'Alfa Laval Direct',
+    priority: 'critical',
+    hasApiIntegration: true
+  },
+  {
+    id: 'ORD-004',
+    orderNumber: 'MANUAL-001',
+    assetId: 'AST-002', // Compressor
+    type: 'parts',
+    status: 'delivered',
+    orderDate: '2024-12-10',
+    deliveredDate: '2024-12-12',
+    totalAmount: 325.00,
+    items: [
+      {
+        partNumber: 'AC-FILTER-001',
+        description: 'Air Filter Element - Local Purchase',
+        quantity: 1,
+        unitPrice: 325.00,
+        isWearItem: true
+      }
+    ],
+    vendor: 'Local Hardware Store',
+    priority: 'medium',
+    isManualEntry: true,
+    hasApiIntegration: false
   }
 ];

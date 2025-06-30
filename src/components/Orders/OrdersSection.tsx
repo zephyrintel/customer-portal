@@ -1,28 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ShoppingCart, Package, Calendar, DollarSign, Truck, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react';
+import { mockOrders } from '../../data/mockData';
+import { Order } from '../../types/Asset';
 import ManualOrderModal from './ManualOrderModal';
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  type: 'parts' | 'maintenance' | 'emergency';
-  status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'cancelled';
-  orderDate: string;
-  expectedDelivery?: string;
-  deliveredDate?: string;
-  totalAmount: number;
-  items: Array<{
-    partNumber: string;
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    isWearItem?: boolean;
-  }>;
-  vendor: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  isManualEntry?: boolean;
-  hasApiIntegration?: boolean;
-}
 
 interface OrdersSectionProps {
   assetId: string;
@@ -36,106 +16,11 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [minHeight, setMinHeight] = useState<number>(0);
 
-  // Mock orders data - in real app, this would come from ERP integration
-  const mockOrders: Order[] = [
-    {
-      id: 'ORD-001',
-      orderNumber: 'PO-2024-1234',
-      type: 'parts',
-      status: 'shipped',
-      orderDate: '2024-12-15',
-      expectedDelivery: '2024-12-22',
-      totalAmount: 1250.00,
-      items: [
-        {
-          partNumber: '55916',
-          description: 'SHIM FASTENAL NUMBER 7041808',
-          quantity: 2,
-          unitPrice: 45.00,
-          isWearItem: true
-        },
-        {
-          partNumber: '4090064020',
-          description: 'CUP - RACE',
-          quantity: 1,
-          unitPrice: 1160.00,
-          isWearItem: true
-        }
-      ],
-      vendor: 'IPEC Parts Supply',
-      priority: 'medium',
-      hasApiIntegration: true
-    },
-    {
-      id: 'ORD-002',
-      orderNumber: 'PO-2024-1189',
-      type: 'maintenance',
-      status: 'delivered',
-      orderDate: '2024-11-28',
-      deliveredDate: '2024-12-05',
-      totalAmount: 850.00,
-      items: [
-        {
-          partNumber: '2120056074',
-          description: 'POPPET RELIEF VALVE NYLON RA',
-          quantity: 1,
-          unitPrice: 850.00,
-          isWearItem: false
-        }
-      ],
-      vendor: 'Milton Roy Direct',
-      priority: 'high',
-      hasApiIntegration: true
-    },
-    {
-      id: 'ORD-003',
-      orderNumber: 'PO-2024-1456',
-      type: 'emergency',
-      status: 'pending',
-      orderDate: '2024-12-18',
-      expectedDelivery: '2024-12-20',
-      totalAmount: 2100.00,
-      items: [
-        {
-          partNumber: '54002',
-          description: 'HOUSING MROY A SIMPLEX LG HEAD',
-          quantity: 1,
-          unitPrice: 2100.00,
-          isWearItem: false
-        }
-      ],
-      vendor: 'Emergency Parts LLC',
-      priority: 'critical',
-      hasApiIntegration: true
-    },
-    {
-      id: 'ORD-004',
-      orderNumber: 'MANUAL-001',
-      type: 'parts',
-      status: 'delivered',
-      orderDate: '2024-12-10',
-      deliveredDate: '2024-12-12',
-      totalAmount: 325.00,
-      items: [
-        {
-          partNumber: 'LOCAL-GASKET-01',
-          description: 'Replacement Gasket Set - Local Purchase',
-          quantity: 1,
-          unitPrice: 325.00,
-          isWearItem: true
-        }
-      ],
-      vendor: 'Local Hardware Store',
-      priority: 'medium',
-      isManualEntry: true,
-      hasApiIntegration: false
-    }
-  ];
-
-  // Initialize orders
+  // Filter orders for this specific asset
   useEffect(() => {
-    setOrders(mockOrders);
-  }, []);
+    const assetOrders = mockOrders.filter(order => order.assetId === assetId);
+    setOrders(assetOrders);
+  }, [assetId]);
 
   // Calculate minimum height to prevent jolting
   useEffect(() => {
@@ -251,6 +136,7 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
       const newOrder: Order = {
         id: `MANUAL-${Date.now()}`,
         orderNumber: `MANUAL-${String(orders.filter(o => o.isManualEntry).length + 1).padStart(3, '0')}`,
+        assetId: assetId,
         type: orderData.type,
         status: orderData.status,
         orderDate: orderData.orderDate,
