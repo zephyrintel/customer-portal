@@ -148,8 +148,7 @@ const DashboardPage: React.FC = () => {
 
           <AssetStatusCard
             totalAssets={metrics.totalEquipment}
-            assetsNeedingUpdate={metrics.assetsNeedingUpdate}
-            lastUpdateDays={metrics.lastUpdateDays}
+            assetsNotOperating={metrics.assetsNotOperating}
             onUpdateAssets={navigationHandlers.updateAssets}
           />
 
@@ -222,14 +221,9 @@ function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof moc
     );
   }).length;
 
-  // Calculate assets needing status updates
-  const assetsNeedingUpdate = assets.filter(asset => {
-    if (!asset.lastMaintenance) return true;
-    
-    const lastMaintenance = new Date(asset.lastMaintenance);
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    
-    return lastMaintenance < thirtyDaysAgo;
+  // Calculate assets not operating (Not In Use + Not Commissioned)
+  const assetsNotOperating = assets.filter(asset => {
+    return asset.currentStatus === 'Not In Use' || asset.currentStatus === 'Not Commissioned';
   }).length;
 
   // Calculate assets with no parts activity - this is concerning from plant perspective
@@ -249,9 +243,6 @@ function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof moc
     return !hasReplacements && !hasOrders;
   }).length;
 
-  // Mock data - in production, these would come from APIs
-  const lastUpdateDays = 3;
-  
   // Count open orders
   const openOrders = orders.filter(order => 
     ['pending', 'approved', 'shipped'].includes(order.status)
@@ -263,9 +254,8 @@ function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof moc
   return {
     totalEquipment,
     assetsWithMaintenance,
-    assetsNeedingUpdate,
+    assetsNotOperating,
     assetsWithNoPartsActivity,
-    lastUpdateDays,
     openOrders,
     totalDocuments
   };
