@@ -14,6 +14,8 @@ import {
   BookOpen
 } from 'lucide-react';
 import StatCard from '../components/Dashboard/StatCard';
+import AssetStatusCard from '../components/Dashboard/AssetStatusCard';
+import AssetKnowledgeCard from '../components/Dashboard/AssetKnowledgeCard';
 import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
 import OnboardingCard from '../components/Dashboard/OnboardingCard';
 import RecentActivityCard from '../components/Dashboard/RecentActivityCard';
@@ -26,23 +28,24 @@ const DashboardPage: React.FC = () => {
   // Calculate dashboard metrics
   const totalEquipment = mockAssets.length;
   
-  const upcomingMaintenance = mockAssets.filter(asset => {
-    if (asset.wearComponents.length === 0) return false;
+  // Calculate assets needing status updates (mock logic - in real app, track last update timestamps)
+  const assetsNeedingUpdate = mockAssets.filter(asset => {
+    // Mock: Assets without recent maintenance or status updates need attention
+    if (!asset.lastMaintenance) return true;
     
-    const today = new Date();
-    const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const lastMaintenance = new Date(asset.lastMaintenance);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
-    return asset.wearComponents.some(component => {
-      if (!component.lastReplaced || !component.recommendedReplacementInterval) return false;
-      
-      const lastReplacedDate = new Date(component.lastReplaced);
-      const intervalMonths = parseInt(component.recommendedReplacementInterval.split(' ')[0]);
-      const nextDueDate = new Date(lastReplacedDate);
-      nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
-      
-      return nextDueDate >= today && nextDueDate <= oneWeekFromNow;
-    });
+    return lastMaintenance < thirtyDaysAgo;
   }).length;
+
+  // Mock: Days since last status update
+  const lastUpdateDays = 3;
+
+  // Asset discovery metrics (mock - in real app, this could be based on facility size estimates)
+  const knownAssets = totalEquipment;
+  const estimatedTotal = Math.ceil(totalEquipment * 1.4); // Assume we're missing ~40% of assets
+  const completionPercentage = Math.round((knownAssets / estimatedTotal) * 100);
 
   const recentMaintenance = mockAssets.filter(asset => {
     if (!asset.lastMaintenance) return false;
@@ -112,8 +115,12 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
-  const handleGetRecommendations = () => {
-    navigate('/maintenance?tab=recommendations');
+  const handleUpdateAssets = () => {
+    navigate('/assets?action=update-status');
+  };
+
+  const handleDiscoverAssets = () => {
+    navigate('/assets?action=discover');
   };
 
   const handleLogMaintenance = () => {
@@ -188,56 +195,19 @@ const DashboardPage: React.FC = () => {
             }}
           />
 
-          {upcomingMaintenance > 0 ? (
-            <StatCard
-              title="Maintenance This Week"
-              value={upcomingMaintenance}
-              subtitle="Units requiring attention"
-              icon={Calendar}
-              iconColor="text-orange-600"
-              action={{
-                label: "Schedule Now",
-                onClick: handleViewMaintenance
-              }}
-            />
-          ) : (
-            <EmptyStateCard
-              title="No maintenance scheduled?"
-              description="Let's fix that."
-              icon={Calendar}
-              iconColor="text-orange-600"
-              actionLabel="Get Recommendations"
-              onAction={handleGetRecommendations}
-            />
-          )}
+          <AssetStatusCard
+            totalAssets={totalEquipment}
+            assetsNeedingUpdate={assetsNeedingUpdate}
+            lastUpdateDays={lastUpdateDays}
+            onUpdateAssets={handleUpdateAssets}
+          />
 
-          {recentMaintenance > 0 ? (
-            <StatCard
-              title="Recent Maintenance"
-              value={recentMaintenance}
-              subtitle="Completed last week"
-              icon={CheckCircle}
-              iconColor="text-green-600"
-              trend={{
-                value: 12,
-                isPositive: true,
-                label: "vs previous week"
-              }}
-              action={{
-                label: "View History",
-                onClick: handleViewMaintenance
-              }}
-            />
-          ) : (
-            <EmptyStateCard
-              title="Track completed work"
-              description="Build maintenance history"
-              icon={CheckCircle}
-              iconColor="text-green-600"
-              actionLabel="Log Maintenance"
-              onAction={handleLogMaintenance}
-            />
-          )}
+          <AssetKnowledgeCard
+            knownAssets={knownAssets}
+            estimatedTotal={estimatedTotal}
+            completionPercentage={completionPercentage}
+            onDiscoverAssets={handleDiscoverAssets}
+          />
 
           {openOrders > 0 ? (
             <StatCard
