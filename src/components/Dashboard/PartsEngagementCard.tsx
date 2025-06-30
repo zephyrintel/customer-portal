@@ -80,22 +80,31 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
         variant: getButtonVariant()
       }}
     >
-      <div className="space-y-4">
-        <MetricDisplay
-          value={totalAssets - assetsWithNoPartsActivity}
-          subtitle={`of ${totalAssets} assets with parts activity`}
-        />
+      <div className="space-y-6">
+        {/* Metric Display - Fixed height */}
+        <div className="h-20 flex items-center justify-center">
+          <MetricDisplay
+            value={totalAssets - assetsWithNoPartsActivity}
+            subtitle={`of ${totalAssets} assets with parts activity`}
+          />
+        </div>
         
-        <ProgressBar
-          percentage={engagementPercentage}
-          color={getProgressColor() as any}
-          showLabel={false}
-        />
+        {/* Progress Bar - Aligned position */}
+        <div className="h-8 flex items-center">
+          <ProgressBar
+            percentage={engagementPercentage}
+            color={getProgressColor() as any}
+            showLabel={false}
+          />
+        </div>
 
-        <StatusIndicator
-          message={getStatusMessage()}
-          type={statusType}
-        />
+        {/* Status Indicator - Fixed height */}
+        <div className="h-12 flex items-center justify-center">
+          <StatusIndicator
+            message={getStatusMessage()}
+            type={statusType}
+          />
+        </div>
       </div>
     </BaseCard>
   );

@@ -32,7 +32,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   };
 
   return (
-    <div className={className}>
+    <div className={`w-full ${className}`}>
       {showLabel && (
         <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
           <span>{label}</span>

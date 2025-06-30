@@ -82,22 +82,31 @@ const MaintenanceSchedulingCard: React.FC<MaintenanceSchedulingCardProps> = ({
         variant: getButtonVariant()
       }}
     >
-      <div className="space-y-4">
-        <MetricDisplay
-          value={`${percentage}%`}
-          subtitle={`${assetsWithMaintenance} of ${totalAssets} assets`}
-        />
+      <div className="space-y-6">
+        {/* Metric Display - Fixed height */}
+        <div className="h-20 flex items-center justify-center">
+          <MetricDisplay
+            value={`${percentage}%`}
+            subtitle={`${assetsWithMaintenance} of ${totalAssets} assets`}
+          />
+        </div>
         
-        <ProgressBar
-          percentage={percentage}
-          color={getProgressColor() as any}
-          showLabel={false}
-        />
+        {/* Progress Bar - Aligned position */}
+        <div className="h-8 flex items-center">
+          <ProgressBar
+            percentage={percentage}
+            color={getProgressColor() as any}
+            showLabel={false}
+          />
+        </div>
 
-        <StatusIndicator
-          message={getStatusMessage()}
-          type={statusType}
-        />
+        {/* Status Indicator - Fixed height */}
+        <div className="h-12 flex items-center justify-center">
+          <StatusIndicator
+            message={getStatusMessage()}
+            type={statusType}
+          />
+        </div>
       </div>
     </BaseCard>
   );

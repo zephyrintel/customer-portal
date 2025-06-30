@@ -39,11 +39,14 @@ const StatCard: React.FC<StatCardProps> = ({
       action={action}
       className={className}
     >
-      <MetricDisplay
-        value={value}
-        subtitle={subtitle}
-        trend={trend}
-      />
+      {/* Centered metric display with consistent height */}
+      <div className="h-32 flex items-center justify-center">
+        <MetricDisplay
+          value={value}
+          subtitle={subtitle}
+          trend={trend}
+        />
+      </div>
     </BaseCard>
   );
 };

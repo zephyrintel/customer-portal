@@ -35,9 +35,9 @@ const BaseCard: React.FC<BaseCardProps> = ({
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 flex flex-col h-full ${className}`}>
-      {/* Header */}
-      <div className="p-6 pb-4">
-        <div className="flex items-center justify-center space-x-3 mb-4">
+      {/* Header - Fixed height for consistency */}
+      <div className="p-6 pb-0">
+        <div className="flex items-center justify-center space-x-3 h-16">
           <div className={`p-2 rounded-lg bg-gray-50 ${iconColor}`}>
             <Icon className="w-5 h-5" />
           </div>
@@ -45,14 +45,14 @@ const BaseCard: React.FC<BaseCardProps> = ({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-6 pb-4 flex-1 flex flex-col justify-center">
+      {/* Content - Flexible height with consistent spacing */}
+      <div className="px-6 py-6 flex-1 flex flex-col justify-between">
         {children}
       </div>
 
-      {/* Action */}
+      {/* Action - Fixed height for consistency */}
       {action && (
-        <div className="p-6 pt-4 border-t border-gray-100">
+        <div className="p-6 pt-0 border-t border-gray-100">
           <div className="text-center">
             <button
               onClick={action.onClick}

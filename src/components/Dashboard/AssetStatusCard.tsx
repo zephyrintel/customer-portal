@@ -78,22 +78,31 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
         variant: getButtonVariant()
       }}
     >
-      <div className="space-y-4">
-        <MetricDisplay
-          value={operatingAssets}
-          subtitle={`of ${totalAssets} assets operating`}
-        />
+      <div className="space-y-6">
+        {/* Metric Display - Fixed height */}
+        <div className="h-20 flex items-center justify-center">
+          <MetricDisplay
+            value={operatingAssets}
+            subtitle={`of ${totalAssets} assets operating`}
+          />
+        </div>
         
-        <ProgressBar
-          percentage={operatingPercentage}
-          color={getProgressColor() as any}
-          label="Operational Rate"
-        />
+        {/* Progress Bar - Aligned position */}
+        <div className="h-8 flex items-center">
+          <ProgressBar
+            percentage={operatingPercentage}
+            color={getProgressColor() as any}
+            label="Operational Rate"
+          />
+        </div>
 
-        <StatusIndicator
-          message={getStatusMessage()}
-          type={statusType}
-        />
+        {/* Status Indicator - Fixed height */}
+        <div className="h-12 flex items-center justify-center">
+          <StatusIndicator
+            message={getStatusMessage()}
+            type={statusType}
+          />
+        </div>
       </div>
     </BaseCard>
   );
