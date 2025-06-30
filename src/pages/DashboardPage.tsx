@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, 
-  Calendar, 
-  CheckCircle, 
   ShoppingCart, 
   FileText,
   Shield
@@ -16,12 +14,13 @@ import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
 import OnboardingCard from '../components/Dashboard/OnboardingCard';
 import RecentActivityCard from '../components/Dashboard/RecentActivityCard';
 import { mockAssets, mockOrders } from '../data/mockData';
+import { calculateDashboardMetrics } from '../utils/dashboardMetrics';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  // Calculate dashboard metrics using reusable functions
+  // Calculate dashboard metrics using utility function
   const metrics = calculateDashboardMetrics(mockAssets, mockOrders);
 
   // Mock recent activities - in production, this would come from an API
@@ -121,7 +120,7 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Stats Grid - 4 columns */}
+        {/* Main Stats Grid - 4 columns with equal height */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Equipment"
@@ -160,7 +159,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Secondary Stats Row - 2 columns for better spacing */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {metrics.openOrders > 0 ? (
             <StatCard
               title="Open Orders"
@@ -208,57 +207,5 @@ const DashboardPage: React.FC = () => {
     </div>
   );
 };
-
-// Extracted utility function for calculating dashboard metrics
-function calculateDashboardMetrics(assets: typeof mockAssets, orders: typeof mockOrders) {
-  const totalEquipment = assets.length;
-  
-  // Calculate maintenance scheduling percentage
-  const assetsWithMaintenance = assets.filter(asset => {
-    // Assets with recent maintenance or scheduled maintenance
-    return asset.lastMaintenance !== null || asset.wearComponents.some(component => 
-      component.lastReplaced && component.recommendedReplacementInterval
-    );
-  }).length;
-
-  // Calculate assets not operating (Not In Use + Not Commissioned)
-  const assetsNotOperating = assets.filter(asset => {
-    return asset.currentStatus === 'Not In Use' || asset.currentStatus === 'Not Commissioned';
-  }).length;
-
-  // Calculate assets with no parts activity - this is concerning from plant perspective
-  const assetsWithNoPartsActivity = assets.filter(asset => {
-    // Check if asset has wear components but no orders or replacements
-    const hasWearComponents = asset.wearComponents.length > 0;
-    if (!hasWearComponents) return false;
-    
-    // Check if any wear components have been replaced
-    const hasReplacements = asset.wearComponents.some(component => component.lastReplaced);
-    
-    // Check if asset has any orders
-    const hasOrders = orders.some(order => order.assetId === asset.id);
-    
-    // Asset has no parts activity if it has wear components but no replacements or orders
-    // This could indicate neglected maintenance or missed preventive care opportunities
-    return !hasReplacements && !hasOrders;
-  }).length;
-
-  // Count open orders
-  const openOrders = orders.filter(order => 
-    ['pending', 'approved', 'shipped'].includes(order.status)
-  ).length;
-
-  // Count total documentation across all assets
-  const totalDocuments = assets.reduce((total, asset) => total + asset.documentation.length, 0);
-
-  return {
-    totalEquipment,
-    assetsWithMaintenance,
-    assetsNotOperating,
-    assetsWithNoPartsActivity,
-    openOrders,
-    totalDocuments
-  };
-}
 
 export default DashboardPage;
