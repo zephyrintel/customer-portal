@@ -34,6 +34,16 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
     return '';
   };
 
+  const getButtonStyle = () => {
+    if (assetsNeedingUpdate === 0) {
+      return 'bg-green-50 text-green-700 hover:bg-green-100 focus:ring-green-500';
+    }
+    if (assetsNeedingUpdate <= 2) {
+      return 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500';
+    }
+    return 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500';
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
       <div className="text-center">
@@ -66,13 +76,10 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
       <div className="mt-4 pt-4 border-t border-gray-100 text-center">
         <button
           onClick={onUpdateAssets}
-          className={`text-sm font-medium transition-colors duration-200 ${
-            assetsNeedingUpdate > 0 
-              ? 'text-red-600 hover:text-red-700' 
-              : 'text-blue-600 hover:text-blue-700'
-          }`}
+          className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonStyle()}`}
         >
-          {assetsNeedingUpdate > 0 ? 'Update Status Now' : 'Review Equipment'} →
+          <Heart className="w-4 h-4 mr-2" />
+          {assetsNeedingUpdate > 0 ? 'Update Status Now' : 'Review Equipment'}
         </button>
       </div>
     </div>

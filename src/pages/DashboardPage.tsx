@@ -14,6 +14,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import StatCard from '../components/Dashboard/StatCard';
+import MaintenanceSchedulingCard from '../components/Dashboard/MaintenanceSchedulingCard';
 import AssetStatusCard from '../components/Dashboard/AssetStatusCard';
 import AssetKnowledgeCard from '../components/Dashboard/AssetKnowledgeCard';
 import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
@@ -28,6 +29,15 @@ const DashboardPage: React.FC = () => {
   // Calculate dashboard metrics
   const totalEquipment = mockAssets.length;
   
+  // Calculate maintenance scheduling percentage
+  const assetsWithMaintenance = mockAssets.filter(asset => {
+    // Mock logic: Assets with recent maintenance or scheduled maintenance
+    // In real app, this would check for future scheduled maintenance dates
+    return asset.lastMaintenance !== null || asset.wearComponents.some(component => 
+      component.lastReplaced && component.recommendedReplacementInterval
+    );
+  }).length;
+
   // Calculate assets needing status updates (mock logic - in real app, track last update timestamps)
   const assetsNeedingUpdate = mockAssets.filter(asset => {
     // Mock: Assets without recent maintenance or status updates need attention
@@ -46,15 +56,6 @@ const DashboardPage: React.FC = () => {
   const knownAssets = totalEquipment;
   const estimatedTotal = Math.ceil(totalEquipment * 1.4); // Assume we're missing ~40% of assets
   const completionPercentage = Math.round((knownAssets / estimatedTotal) * 100);
-
-  const recentMaintenance = mockAssets.filter(asset => {
-    if (!asset.lastMaintenance) return false;
-    
-    const lastMaintenanceDate = new Date(asset.lastMaintenance);
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
-    return lastMaintenanceDate >= oneWeekAgo;
-  }).length;
 
   // Mock data for open orders (would come from NetSuite integration)
   const openOrders = 3;
@@ -114,6 +115,10 @@ const DashboardPage: React.FC = () => {
       action: () => navigate('/notifications')
     }
   ];
+
+  const handleScheduleMaintenance = () => {
+    navigate('/maintenance?action=schedule');
+  };
 
   const handleUpdateAssets = () => {
     navigate('/assets?action=update-status');
@@ -195,6 +200,12 @@ const DashboardPage: React.FC = () => {
             }}
           />
 
+          <MaintenanceSchedulingCard
+            totalAssets={totalEquipment}
+            assetsWithMaintenance={assetsWithMaintenance}
+            onScheduleMaintenance={handleScheduleMaintenance}
+          />
+
           <AssetStatusCard
             totalAssets={totalEquipment}
             assetsNeedingUpdate={assetsNeedingUpdate}
@@ -208,29 +219,6 @@ const DashboardPage: React.FC = () => {
             completionPercentage={completionPercentage}
             onDiscoverAssets={handleDiscoverAssets}
           />
-
-          {openOrders > 0 ? (
-            <StatCard
-              title="Open Orders"
-              value={openOrders}
-              subtitle="Parts orders in progress"
-              icon={ShoppingCart}
-              iconColor="text-purple-600"
-              action={{
-                label: "View Orders",
-                onClick: handleViewOrders
-              }}
-            />
-          ) : (
-            <EmptyStateCard
-              title="Your equipment is operating"
-              description="Within normal parameters"
-              icon={Shield}
-              iconColor="text-green-600"
-              actionLabel="Set Up Prevention"
-              onAction={handleSetupPrevention}
-            />
-          )}
         </div>
 
         {/* Content Grid */}
