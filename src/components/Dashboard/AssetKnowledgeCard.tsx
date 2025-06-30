@@ -28,7 +28,7 @@ const AssetKnowledgeCard: React.FC<AssetKnowledgeCardProps> = ({
 
   const getButtonStyle = () => {
     if (completionPercentage >= 80) {
-      return 'bg-green-50 text-green-700 hover:bg-green-100 focus:ring-green-500';
+      return 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500';
     }
     if (completionPercentage >= 60) {
       return 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500';
@@ -37,8 +37,8 @@ const AssetKnowledgeCard: React.FC<AssetKnowledgeCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-      <div className="text-center">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+      <div className="text-center flex-1">
         <div className="flex items-center justify-center space-x-3 mb-4">
           <div className={`p-2 rounded-lg bg-gray-50 ${getCompletionColor()}`}>
             <Search className="w-5 h-5" />
@@ -72,7 +72,7 @@ const AssetKnowledgeCard: React.FC<AssetKnowledgeCardProps> = ({
         </div>
       </div>
       
-      <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+      <div className="mt-auto pt-4 border-t border-gray-100 text-center">
         <button
           onClick={onDiscoverAssets}
           className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonStyle()}`}

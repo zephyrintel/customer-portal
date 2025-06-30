@@ -55,9 +55,19 @@ const MaintenanceSchedulingCard: React.FC<MaintenanceSchedulingCardProps> = ({
     return 'Schedule Maintenance';
   };
 
+  const getButtonStyle = () => {
+    if (percentage === 100) {
+      return 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500';
+    }
+    if (percentage >= 70) {
+      return 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500';
+    }
+    return 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500';
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-      <div className="text-center">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+      <div className="text-center flex-1">
         <div className="flex items-center justify-center space-x-3 mb-4">
           <div className={`p-2 rounded-lg bg-gray-50 ${getStatusColor()}`}>
             {getStatusIcon()}
@@ -87,16 +97,10 @@ const MaintenanceSchedulingCard: React.FC<MaintenanceSchedulingCardProps> = ({
         </div>
       </div>
       
-      <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+      <div className="mt-auto pt-4 border-t border-gray-100 text-center">
         <button
           onClick={onScheduleMaintenance}
-          className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            percentage === 100
-              ? 'bg-green-50 text-green-700 hover:bg-green-100 focus:ring-green-500'
-              : percentage >= 70
-              ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-              : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
-          }`}
+          className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonStyle()}`}
         >
           <Calendar className="w-4 h-4 mr-2" />
           {getButtonText()}
