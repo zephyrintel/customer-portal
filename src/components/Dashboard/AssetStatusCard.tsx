@@ -55,13 +55,6 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
     return `⚠️ ${assetsNotOperating} assets not in operation`;
   };
 
-  const getYellowBoxMessage = () => {
-    if (assetsNotOperating === 0) {
-      return 'Excellent equipment utilization!';
-    }
-    return 'Some equipment may need commissioning';
-  };
-
   const getButtonText = () => {
     return assetsNotOperating === 0 ? 'Review Status' : 'Update Equipment Status';
   };
@@ -100,8 +93,6 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
         <StatusIndicator
           message={getStatusMessage()}
           type={statusType}
-          detail={getYellowBoxMessage()}
-          icon={assetsNotOperating > 0 ? Activity : undefined}
         />
       </div>
     </BaseCard>

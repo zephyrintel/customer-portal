@@ -57,13 +57,6 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
     return `⚠️ ${assetsWithNoPartsActivity} assets have no parts history`;
   };
 
-  const getYellowBoxMessage = () => {
-    if (assetsWithNoPartsActivity === 0) {
-      return 'Great maintenance practices!';
-    }
-    return 'Some equipment may need commissioning';
-  };
-
   const getButtonText = () => {
     return assetsWithNoPartsActivity === 0 ? 'Review History' : 'Review Assets';
   };
@@ -102,8 +95,6 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
         <StatusIndicator
           message={getStatusMessage()}
           type={statusType}
-          detail={getYellowBoxMessage()}
-          icon={assetsWithNoPartsActivity > 0 ? Package : undefined}
         />
       </div>
     </BaseCard>

@@ -52,15 +52,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
         </span>
       </div>
 
-      {/* Only show the yellow box with detail, no redundant plain text */}
-      {detail && (
-        <div className={`text-xs rounded-lg p-2 ${styles.bg} ${styles.text} border ${styles.border}`}>
-          <div className="flex items-center justify-center space-x-1">
-            {Icon && <Icon className="w-3 h-3" />}
-            <span>{detail}</span>
-          </div>
-        </div>
-      )}
+      {/* Yellow box removed - no detail section displayed */}
     </div>
   );
 };
