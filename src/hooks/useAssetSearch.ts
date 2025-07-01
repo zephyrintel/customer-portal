@@ -124,18 +124,27 @@ export const useAssetSearch = (assets: Asset[]) => {
       hasNaturalLanguage = true;
     }
 
-    // Status patterns - including OR logic for multiple statuses
+    // Status patterns - including OR logic for multiple statuses and Unknown
     const statusPatterns = [
       { pattern: /\b(in\s+operation|operating|running)\b/i, status: 'In Operation' },
       { pattern: /\b(not\s+in\s+use|offline|shutdown)\b/i, status: 'Not In Use' },
       { pattern: /\b(not\s+commissioned|new)\b/i, status: 'Not Commissioned' },
-      { pattern: /\b(intermittent|partial)\b/i, status: 'Intermittent Operation' }
+      { pattern: /\b(intermittent|partial)\b/i, status: 'Intermittent Operation' },
+      { pattern: /\b(unknown\s+status|status\s+unknown|unknown)\b/i, status: 'Unknown' }
     ];
 
     // Handle OR logic for status searches
-    const orPattern = /\b(not\s+in\s+use|not\s+commissioned)\s+or\s+(not\s+in\s+use|not\s+commissioned)\b/i;
+    const orPattern = /\b(not\s+in\s+use|not\s+commissioned|unknown)\s+or\s+(not\s+in\s+use|not\s+commissioned|unknown)\b/i;
     if (orPattern.test(lowerTerm)) {
-      filters.statusOr = ['Not In Use', 'Not Commissioned'];
+      const matches = lowerTerm.match(/\b(not\s+in\s+use|not\s+commissioned|unknown)/gi);
+      if (matches) {
+        filters.statusOr = matches.map(match => {
+          if (match.toLowerCase().includes('not in use')) return 'Not In Use';
+          if (match.toLowerCase().includes('not commissioned')) return 'Not Commissioned';
+          if (match.toLowerCase().includes('unknown')) return 'Unknown';
+          return match;
+        }).filter((status, index, arr) => arr.indexOf(status) === index); // Remove duplicates
+      }
       cleanedTerm = cleanedTerm.replace(orPattern, '').trim();
       hasNaturalLanguage = true;
     } else {
@@ -307,13 +316,13 @@ export const useAssetSearch = (assets: Asset[]) => {
           });
         }
 
-        if (lowerTerm.includes('not') || lowerTerm.includes('status')) {
+        if (lowerTerm.includes('not') || lowerTerm.includes('status') || lowerTerm.includes('unknown')) {
           suggestions.push({
             id: 'pattern-status',
             type: 'pattern',
-            label: 'Try: "not in use OR not commissioned"',
-            searchTerm: 'not in use OR not commissioned',
-            description: 'Find assets that need status updates'
+            label: 'Try: "unknown status"',
+            searchTerm: 'unknown status',
+            description: 'Find assets with unknown status'
           });
         }
       }
@@ -373,7 +382,7 @@ export const useAssetSearch = (assets: Asset[]) => {
         });
       }
 
-      if (parsed.filters.statusOr || parsed.filters.status === 'Not In Use' || parsed.filters.status === 'Not Commissioned') {
+      if (parsed.filters.statusOr || parsed.filters.status === 'Not In Use' || parsed.filters.status === 'Not Commissioned' || parsed.filters.status === 'Unknown') {
         suggestions.push({
           action: 'update-status',
           label: 'Update Status',

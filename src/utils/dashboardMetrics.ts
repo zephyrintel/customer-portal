@@ -23,9 +23,12 @@ export function calculateDashboardMetrics(assets: Asset[], orders: Order[]): Das
     );
   }).length;
 
-  // Calculate assets not operating (Not In Use + Not Commissioned)
+  // Calculate assets not operating (Not In Use + Not Commissioned + Unknown)
+  // Unknown status should NOT count as operating since we don't know if they're actually running
   const assetsNotOperating = assets.filter(asset => {
-    return asset.currentStatus === 'Not In Use' || asset.currentStatus === 'Not Commissioned';
+    return asset.currentStatus === 'Not In Use' || 
+           asset.currentStatus === 'Not Commissioned' || 
+           asset.currentStatus === 'Unknown';
   }).length;
 
   // Calculate assets with no parts activity

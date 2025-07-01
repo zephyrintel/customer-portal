@@ -84,8 +84,8 @@ const DashboardPage: React.FC = () => {
     viewEquipment: () => navigate('/assets'),
     scheduleMaintenance: () => navigate('/maintenance?action=schedule'),
     updateAssets: () => {
-      // Filter to show assets that are not in operation (Not In Use + Not Commissioned)
-      navigate('/assets?search=not in use OR not commissioned');
+      // Filter to show assets that are not in operation (Not In Use + Not Commissioned + Unknown)
+      navigate('/assets?search=not in use OR not commissioned OR unknown');
     },
     reviewPartsHistory: () => {
       // Filter to show assets with no parts activity
