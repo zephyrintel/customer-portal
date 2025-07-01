@@ -124,35 +124,53 @@ export const useAssetSearch = (assets: Asset[]) => {
       hasNaturalLanguage = true;
     }
 
-    // Status patterns - including OR logic for multiple statuses and Unknown
-    const statusPatterns = [
-      { pattern: /\b(in\s+operation|operating|running)\b/i, status: 'In Operation' },
-      { pattern: /\b(not\s+in\s+use|offline|shutdown)\b/i, status: 'Not In Use' },
-      { pattern: /\b(not\s+commissioned|new)\b/i, status: 'Not Commissioned' },
-      { pattern: /\b(intermittent|partial)\b/i, status: 'Intermittent Operation' },
-      { pattern: /\b(unknown\s+status|status\s+unknown|unknown)\b/i, status: 'Unknown' }
-    ];
-
-    // Handle OR logic for status searches
-    const orPattern = /\b(not\s+in\s+use|not\s+commissioned|unknown)\s+or\s+(not\s+in\s+use|not\s+commissioned|unknown)\b/i;
-    if (orPattern.test(lowerTerm)) {
-      const matches = lowerTerm.match(/\b(not\s+in\s+use|not\s+commissioned|unknown)/gi);
-      if (matches) {
-        filters.statusOr = matches.map(match => {
-          if (match.toLowerCase().includes('not in use')) return 'Not In Use';
-          if (match.toLowerCase().includes('not commissioned')) return 'Not Commissioned';
-          if (match.toLowerCase().includes('unknown')) return 'Unknown';
-          return match;
-        }).filter((status, index, arr) => arr.indexOf(status) === index); // Remove duplicates
+    // Enhanced OR logic for status searches - handle multiple OR conditions
+    const orKeywordPattern = /\bor\b/i;
+    if (orKeywordPattern.test(lowerTerm)) {
+      // Split by OR and extract status terms
+      const orParts = lowerTerm.split(/\s+or\s+/i);
+      const statusTerms = [];
+      
+      for (const part of orParts) {
+        const trimmedPart = part.trim();
+        
+        // Map search terms to actual status values
+        if (/\b(not\s+in\s+use|offline|shutdown)\b/i.test(trimmedPart)) {
+          statusTerms.push('Not In Use');
+        } else if (/\b(not\s+commissioned|new)\b/i.test(trimmedPart)) {
+          statusTerms.push('Not Commissioned');
+        } else if (/\b(unknown\s+status|status\s+unknown|unknown)\b/i.test(trimmedPart)) {
+          statusTerms.push('Unknown');
+        } else if (/\b(in\s+operation|operating|running)\b/i.test(trimmedPart)) {
+          statusTerms.push('In Operation');
+        } else if (/\b(intermittent|partial)\b/i.test(trimmedPart)) {
+          statusTerms.push('Intermittent Operation');
+        }
       }
-      cleanedTerm = cleanedTerm.replace(orPattern, '').trim();
-      hasNaturalLanguage = true;
+      
+      if (statusTerms.length > 0) {
+        // Remove duplicates
+        filters.statusOr = [...new Set(statusTerms)];
+        // Remove the entire OR expression from cleaned term
+        cleanedTerm = cleanedTerm.replace(/\b(not\s+in\s+use|not\s+commissioned|unknown|in\s+operation|intermittent|operating|running|offline|shutdown|new)\s*(or\s*(not\s+in\s+use|not\s+commissioned|unknown|in\s+operation|intermittent|operating|running|offline|shutdown|new)\s*)*/gi, '').trim();
+        hasNaturalLanguage = true;
+      }
     } else {
+      // Single status patterns (fallback for non-OR searches)
+      const statusPatterns = [
+        { pattern: /\b(in\s+operation|operating|running)\b/i, status: 'In Operation' },
+        { pattern: /\b(not\s+in\s+use|offline|shutdown)\b/i, status: 'Not In Use' },
+        { pattern: /\b(not\s+commissioned|new)\b/i, status: 'Not Commissioned' },
+        { pattern: /\b(intermittent|partial)\b/i, status: 'Intermittent Operation' },
+        { pattern: /\b(unknown\s+status|status\s+unknown|unknown)\b/i, status: 'Unknown' }
+      ];
+
       for (const { pattern, status } of statusPatterns) {
         if (pattern.test(lowerTerm)) {
           filters.status = status;
           cleanedTerm = cleanedTerm.replace(pattern, '').trim();
           hasNaturalLanguage = true;
+          break; // Only match first status pattern
         }
       }
     }
@@ -244,8 +262,8 @@ export const useAssetSearch = (assets: Asset[]) => {
         if (installYear !== parsed.filters.installYear) return false;
       }
       
-      // Handle OR logic for status
-      if (parsed.filters.statusOr) {
+      // Handle OR logic for status (prioritize OR over single status)
+      if (parsed.filters.statusOr && parsed.filters.statusOr.length > 0) {
         if (!parsed.filters.statusOr.includes(asset.currentStatus)) return false;
       } else if (parsed.filters.status && asset.currentStatus !== parsed.filters.status) {
         return false;
@@ -318,11 +336,11 @@ export const useAssetSearch = (assets: Asset[]) => {
 
         if (lowerTerm.includes('not') || lowerTerm.includes('status') || lowerTerm.includes('unknown')) {
           suggestions.push({
-            id: 'pattern-status',
+            id: 'pattern-status-or',
             type: 'pattern',
-            label: 'Try: "unknown status"',
-            searchTerm: 'unknown status',
-            description: 'Find assets with unknown status'
+            label: 'Try: "not in use OR unknown"',
+            searchTerm: 'not in use OR unknown',
+            description: 'Find assets with multiple status conditions'
           });
         }
       }
