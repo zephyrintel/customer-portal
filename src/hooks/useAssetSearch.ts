@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { SearchSuggestion, SearchFilters, ParsedSearch } from '../types/Search';
+import { mockOrders } from '../data/mockData';
 
 const RECENT_SEARCHES_KEY = 'asset-search-recent';
 const MAX_RECENT_SEARCHES = 5;
@@ -12,6 +13,9 @@ export const useAssetSearch = (assets: Asset[]) => {
   const [searchTerm, setSearchTermState] = useState(searchParams.get('search') || '');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Handle special filter parameter for no parts activity
+  const filterParam = searchParams.get('filter');
 
   // Debounce search term
   useEffect(() => {
@@ -120,7 +124,7 @@ export const useAssetSearch = (assets: Asset[]) => {
       hasNaturalLanguage = true;
     }
 
-    // Status patterns
+    // Status patterns - including OR logic for multiple statuses
     const statusPatterns = [
       { pattern: /\b(in\s+operation|operating|running)\b/i, status: 'In Operation' },
       { pattern: /\b(not\s+in\s+use|offline|shutdown)\b/i, status: 'Not In Use' },
@@ -128,11 +132,19 @@ export const useAssetSearch = (assets: Asset[]) => {
       { pattern: /\b(intermittent|partial)\b/i, status: 'Intermittent Operation' }
     ];
 
-    for (const { pattern, status } of statusPatterns) {
-      if (pattern.test(lowerTerm)) {
-        filters.status = status;
-        cleanedTerm = cleanedTerm.replace(pattern, '').trim();
-        hasNaturalLanguage = true;
+    // Handle OR logic for status searches
+    const orPattern = /\b(not\s+in\s+use|not\s+commissioned)\s+or\s+(not\s+in\s+use|not\s+commissioned)\b/i;
+    if (orPattern.test(lowerTerm)) {
+      filters.statusOr = ['Not In Use', 'Not Commissioned'];
+      cleanedTerm = cleanedTerm.replace(orPattern, '').trim();
+      hasNaturalLanguage = true;
+    } else {
+      for (const { pattern, status } of statusPatterns) {
+        if (pattern.test(lowerTerm)) {
+          filters.status = status;
+          cleanedTerm = cleanedTerm.replace(pattern, '').trim();
+          hasNaturalLanguage = true;
+        }
       }
     }
 
@@ -167,13 +179,37 @@ export const useAssetSearch = (assets: Asset[]) => {
     });
   }, []);
 
-  // Filter assets based on parsed search
+  // Check if asset has no parts activity
+  const hasNoPartsActivity = useCallback((asset: Asset): boolean => {
+    // Check if asset has wear components but no orders or replacements
+    const hasWearComponents = asset.wearComponents.length > 0;
+    if (!hasWearComponents) return false;
+    
+    // Check if any wear components have been replaced
+    const hasReplacements = asset.wearComponents.some(component => component.lastReplaced);
+    
+    // Check if asset has any orders
+    const hasOrders = mockOrders.some(order => order.assetId === asset.id);
+    
+    // Asset has no parts activity if it has wear components but no replacements or orders
+    return !hasReplacements && !hasOrders;
+  }, []);
+
+  // Filter assets based on parsed search and special filters
   const filteredAssets = useMemo(() => {
-    if (!debouncedSearchTerm) return assets;
+    let result = assets;
+
+    // Apply special filter parameter first
+    if (filterParam === 'no-parts-activity') {
+      result = result.filter(hasNoPartsActivity);
+    }
+
+    // If no search term, return filtered result
+    if (!debouncedSearchTerm) return result;
 
     const parsed = parseSearchTerm(debouncedSearchTerm);
     
-    return assets.filter(asset => {
+    return result.filter(asset => {
       // Apply natural language filters
       if (parsed.filters.equipmentType && asset.equipmentType !== parsed.filters.equipmentType) {
         return false;
@@ -199,7 +235,10 @@ export const useAssetSearch = (assets: Asset[]) => {
         if (installYear !== parsed.filters.installYear) return false;
       }
       
-      if (parsed.filters.status && asset.currentStatus !== parsed.filters.status) {
+      // Handle OR logic for status
+      if (parsed.filters.statusOr) {
+        if (!parsed.filters.statusOr.includes(asset.currentStatus)) return false;
+      } else if (parsed.filters.status && asset.currentStatus !== parsed.filters.status) {
         return false;
       }
 
@@ -223,7 +262,7 @@ export const useAssetSearch = (assets: Asset[]) => {
 
       return true;
     });
-  }, [assets, debouncedSearchTerm, parseSearchTerm, hasMaintenanceDue]);
+  }, [assets, debouncedSearchTerm, filterParam, parseSearchTerm, hasMaintenanceDue, hasNoPartsActivity]);
 
   // Generate search suggestions
   const suggestions = useMemo((): SearchSuggestion[] => {
@@ -267,6 +306,16 @@ export const useAssetSearch = (assets: Asset[]) => {
             description: 'Find assets with upcoming maintenance'
           });
         }
+
+        if (lowerTerm.includes('not') || lowerTerm.includes('status')) {
+          suggestions.push({
+            id: 'pattern-status',
+            type: 'pattern',
+            label: 'Try: "not in use OR not commissioned"',
+            searchTerm: 'not in use OR not commissioned',
+            description: 'Find assets that need status updates'
+          });
+        }
       }
     }
 
@@ -284,35 +333,58 @@ export const useAssetSearch = (assets: Asset[]) => {
   // Clear search
   const clearSearch = useCallback(() => {
     setSearchTerm('');
-  }, [setSearchTerm]);
+    // Also clear any filter parameters
+    const params = new URLSearchParams(searchParams);
+    params.delete('filter');
+    setSearchParams(params, { replace: true });
+  }, [setSearchTerm, searchParams, setSearchParams]);
 
   // Get suggested bulk actions based on search
   const getSuggestedBulkActions = useCallback(() => {
-    if (!debouncedSearchTerm) return [];
-    
-    const parsed = parseSearchTerm(debouncedSearchTerm);
     const suggestions = [];
     
-    if (parsed.filters.maintenanceDue) {
+    if (filterParam === 'no-parts-activity') {
       suggestions.push({
-        action: 'schedule-maintenance',
-        label: 'Schedule Maintenance',
-        icon: '📅',
-        description: 'Schedule maintenance for assets with upcoming due dates'
+        action: 'order-parts',
+        label: 'Order Parts',
+        icon: '📦',
+        description: 'Order parts for assets with no parts history'
       });
     }
     
-    if (parsed.filters.critical) {
-      suggestions.push({
-        action: 'order-parts',
-        label: 'Order Critical Parts',
-        icon: '📦',
-        description: 'Order parts for critical assets'
-      });
+    if (debouncedSearchTerm) {
+      const parsed = parseSearchTerm(debouncedSearchTerm);
+      
+      if (parsed.filters.maintenanceDue) {
+        suggestions.push({
+          action: 'schedule-maintenance',
+          label: 'Schedule Maintenance',
+          icon: '📅',
+          description: 'Schedule maintenance for assets with upcoming due dates'
+        });
+      }
+      
+      if (parsed.filters.critical) {
+        suggestions.push({
+          action: 'order-parts',
+          label: 'Order Critical Parts',
+          icon: '📦',
+          description: 'Order parts for critical assets'
+        });
+      }
+
+      if (parsed.filters.statusOr || parsed.filters.status === 'Not In Use' || parsed.filters.status === 'Not Commissioned') {
+        suggestions.push({
+          action: 'update-status',
+          label: 'Update Status',
+          icon: '🔄',
+          description: 'Update equipment status for selected assets'
+        });
+      }
     }
     
     return suggestions;
-  }, [debouncedSearchTerm, parseSearchTerm]);
+  }, [debouncedSearchTerm, filterParam, parseSearchTerm]);
 
   return {
     searchTerm,
@@ -323,7 +395,7 @@ export const useAssetSearch = (assets: Asset[]) => {
     isSearching,
     resultCount: filteredAssets.length,
     totalCount: assets.length,
-    hasActiveSearch: !!debouncedSearchTerm,
+    hasActiveSearch: !!debouncedSearchTerm || !!filterParam,
     getSuggestedBulkActions,
     parseSearchTerm: (term: string) => parseSearchTerm(term)
   };

@@ -83,8 +83,15 @@ const DashboardPage: React.FC = () => {
   const navigationHandlers = {
     viewEquipment: () => navigate('/assets'),
     scheduleMaintenance: () => navigate('/maintenance?action=schedule'),
-    updateAssets: () => navigate('/assets?action=update-status'),
-    reviewPartsHistory: () => navigate('/assets?filter=no-parts-activity'),
+    updateAssets: () => {
+      // Filter to show assets that are not in operation (Not In Use + Not Commissioned)
+      navigate('/assets?search=not in use OR not commissioned');
+    },
+    reviewPartsHistory: () => {
+      // Filter to show assets with no parts activity
+      // This will be handled by the search system to identify assets with wear components but no orders/replacements
+      navigate('/assets?filter=no-parts-activity');
+    },
     viewOrders: () => navigate('/orders'),
     viewDocumentation: () => navigate('/documentation'),
     viewActivity: () => navigate('/activity'),

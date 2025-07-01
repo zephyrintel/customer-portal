@@ -14,6 +14,7 @@ export interface SearchFilters {
   critical?: boolean;
   installYear?: number;
   status?: string;
+  statusOr?: string[]; // For OR logic between multiple statuses
 }
 
 export interface ParsedSearch {
