@@ -179,31 +179,20 @@ export const useAssetSearch = (assets: Asset[]) => {
     });
   }, []);
 
-  // Check if asset has no parts activity (updated logic)
+  // Check if asset has absolutely no parts activity (reverted to original logic)
   const hasNoPartsActivity = useCallback((asset: Asset): boolean => {
     // Must have wear components to be considered for parts activity
     const hasWearComponents = asset.wearComponents.length > 0;
     if (!hasWearComponents) return false;
     
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    // Check if any wear components have been replaced
+    const hasReplacements = asset.wearComponents.some(component => component.lastReplaced);
     
-    // Check for recent replacements (within last 6 months)
-    const hasRecentReplacements = asset.wearComponents.some(component => {
-      if (!component.lastReplaced) return false;
-      const lastReplacedDate = new Date(component.lastReplaced);
-      return lastReplacedDate > sixMonthsAgo;
-    });
+    // Check if asset has any orders
+    const hasOrders = mockOrders.some(order => order.assetId === asset.id);
     
-    // Check for recent orders (within last 6 months)
-    const hasRecentOrders = mockOrders.some(order => {
-      if (order.assetId !== asset.id) return false;
-      const orderDate = new Date(order.orderDate);
-      return orderDate > sixMonthsAgo;
-    });
-    
-    // Asset has no parts activity if it has wear components but no recent activity
-    return !hasRecentReplacements && !hasRecentOrders;
+    // Asset has no parts activity if it has wear components but no replacements or orders
+    return !hasReplacements && !hasOrders;
   }, []);
 
   // Filter assets based on parsed search and special filters

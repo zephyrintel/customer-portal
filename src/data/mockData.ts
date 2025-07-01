@@ -362,6 +362,414 @@ export const mockAssets: Asset[] = [
         text: "Motor delivered and staged for installation"
       }
     ]
+  },
+
+  // Additional assets based on Zephyr Intel Empire view screenshots
+  {
+    id: "AST-006",
+    serialNumber: "72111438",
+    name: "Sundyne LMV-322 Pump",
+    
+    brand: "Sundyne",
+    modelCode: "LMV-322",
+    equipmentType: "Pump",
+    currentStatus: "Unknown",
+    criticalityLevel: "Medium",
+    
+    installDate: "2023-05-15",
+    lastMaintenance: null,
+    
+    location: {
+      facility: "Marathon Canton",
+      area: "Process Unit 1"
+    },
+    
+    operatingConditions: {
+      flowRate: "320 GPM",
+      pressure: "180 PSI",
+      temperature: "120°F",
+      fluidType: "Oil"
+    },
+    
+    // This asset has wear components but NO parts history (no orders, no replacements)
+    wearComponents: [
+      {
+        partNumber: "SUN-SEAL-322",
+        description: "Mechanical Seal Assembly",
+        recommendedReplacementInterval: "12 months",
+        lastReplaced: null
+      },
+      {
+        partNumber: "SUN-BEARING-322",
+        description: "Thrust Bearing",
+        recommendedReplacementInterval: "18 months",
+        lastReplaced: null
+      }
+    ],
+    
+    documentation: [],
+    billOfMaterials: [
+      {
+        partNumber: "SUN-SEAL-322",
+        description: "Mechanical Seal Assembly",
+        quantity: 1,
+        isWearItem: true
+      },
+      {
+        partNumber: "SUN-BEARING-322",
+        description: "Thrust Bearing",
+        quantity: 1,
+        isWearItem: true
+      },
+      {
+        partNumber: "SUN-IMPELLER-322",
+        description: "Impeller Assembly",
+        quantity: 1,
+        isWearItem: false
+      }
+    ],
+    
+    imageUrl: null,
+    notes: []
+  },
+
+  {
+    id: "AST-007",
+    serialNumber: "4055",
+    name: "Sundyne LMV-322 Pump Unit 2",
+    
+    brand: "Sundyne",
+    modelCode: "LMV-322",
+    equipmentType: "Pump",
+    currentStatus: "Unknown",
+    criticalityLevel: "Medium",
+    
+    installDate: "2023-05-15",
+    lastMaintenance: null,
+    
+    location: {
+      facility: "Marathon Canton",
+      area: "Process Unit 2"
+    },
+    
+    operatingConditions: {
+      flowRate: "320 GPM",
+      pressure: "180 PSI",
+      temperature: "120°F",
+      fluidType: "Oil"
+    },
+    
+    // This asset has wear components but NO parts history
+    wearComponents: [
+      {
+        partNumber: "SUN-SEAL-322",
+        description: "Mechanical Seal Assembly",
+        recommendedReplacementInterval: "12 months",
+        lastReplaced: null
+      }
+    ],
+    
+    documentation: [],
+    billOfMaterials: [
+      {
+        partNumber: "SUN-SEAL-322",
+        description: "Mechanical Seal Assembly",
+        quantity: 1,
+        isWearItem: true
+      }
+    ],
+    
+    imageUrl: null,
+    notes: []
+  },
+
+  {
+    id: "AST-008",
+    serialNumber: "C2068715-01",
+    name: "Sundyne LMC-331F Compressor",
+    
+    brand: "Sundyne",
+    modelCode: "LMC-331F",
+    equipmentType: "Compressor",
+    currentStatus: "Unknown",
+    criticalityLevel: "High",
+    
+    installDate: "2022-11-20",
+    lastMaintenance: null,
+    
+    location: {
+      facility: "Williams Plant",
+      area: "Gas Processing Unit"
+    },
+    
+    operatingConditions: {
+      flowRate: "850 CFM",
+      pressure: "300 PSI",
+      temperature: "95°F",
+      fluidType: "Gas"
+    },
+    
+    // This asset has wear components but NO parts history
+    wearComponents: [
+      {
+        partNumber: "SUN-SEAL-331F",
+        description: "Dry Gas Seal",
+        recommendedReplacementInterval: "24 months",
+        lastReplaced: null
+      },
+      {
+        partNumber: "SUN-BEARING-331F",
+        description: "Magnetic Bearing Assembly",
+        recommendedReplacementInterval: "36 months",
+        lastReplaced: null
+      }
+    ],
+    
+    documentation: [],
+    billOfMaterials: [
+      {
+        partNumber: "SUN-SEAL-331F",
+        description: "Dry Gas Seal",
+        quantity: 1,
+        isWearItem: true
+      },
+      {
+        partNumber: "SUN-BEARING-331F",
+        description: "Magnetic Bearing Assembly",
+        quantity: 1,
+        isWearItem: true
+      }
+    ],
+    
+    imageUrl: null,
+    notes: []
+  },
+
+  {
+    id: "AST-009",
+    serialNumber: "03232872-2",
+    name: "Milton Roy MDD Pump",
+    
+    brand: "Milton Roy",
+    modelCode: "MDD",
+    equipmentType: "Pump",
+    currentStatus: "Unknown",
+    criticalityLevel: "Medium",
+    
+    installDate: "2024-01-10",
+    lastMaintenance: null,
+    
+    location: {
+      facility: "Marathon Canton",
+      area: "Chemical Injection"
+    },
+    
+    operatingConditions: {
+      flowRate: "50 GPM",
+      pressure: "500 PSI",
+      temperature: "100°F",
+      fluidType: "Chemical"
+    },
+    
+    // This asset has wear components but NO parts history
+    wearComponents: [
+      {
+        partNumber: "MR-DIAPHRAGM-001",
+        description: "Diaphragm Assembly",
+        recommendedReplacementInterval: "6 months",
+        lastReplaced: null
+      },
+      {
+        partNumber: "MR-VALVE-001",
+        description: "Check Valve Set",
+        recommendedReplacementInterval: "12 months",
+        lastReplaced: null
+      }
+    ],
+    
+    documentation: [],
+    billOfMaterials: [
+      {
+        partNumber: "MR-DIAPHRAGM-001",
+        description: "Diaphragm Assembly",
+        quantity: 1,
+        isWearItem: true
+      },
+      {
+        partNumber: "MR-VALVE-001",
+        description: "Check Valve Set",
+        quantity: 2,
+        isWearItem: true
+      }
+    ],
+    
+    imageUrl: null,
+    notes: []
+  },
+
+  {
+    id: "AST-010",
+    serialNumber: "4570617",
+    name: "Milton Roy MRA Pump - Cenovus",
+    
+    brand: "Milton Roy",
+    modelCode: "MRA",
+    equipmentType: "Pump",
+    currentStatus: "In Operation",
+    criticalityLevel: "Critical",
+    
+    installDate: "2023-03-20",
+    lastMaintenance: "2024-08-15",
+    
+    location: {
+      facility: "Cenovus Lima Refinery",
+      area: "Husky Energy Unit"
+    },
+    
+    operatingConditions: {
+      flowRate: "400 GPM",
+      pressure: "200 PSI",
+      temperature: "160°F",
+      fluidType: "Oil"
+    },
+    
+    wearComponents: [
+      {
+        partNumber: "MR-SEAL-MRA",
+        description: "Mechanical Seal",
+        recommendedReplacementInterval: "18 months",
+        lastReplaced: "2024-08-15"
+      }
+    ],
+    
+    documentation: [
+      {
+        id: "DOC-010",
+        title: "MRA_Operating_Manual.pdf",
+        type: "Operating Manual",
+        url: "/documents/mra-manual.pdf",
+        uploadDate: "2023-03-20",
+        fileSize: 1800000,
+        tags: ["operation", "maintenance"]
+      }
+    ],
+    
+    billOfMaterials: [
+      {
+        partNumber: "MR-SEAL-MRA",
+        description: "Mechanical Seal",
+        quantity: 1,
+        isWearItem: true
+      }
+    ],
+    
+    imageUrl: null,
+    notes: [
+      {
+        date: "2024-08-15",
+        text: "Replaced mechanical seal during scheduled maintenance"
+      }
+    ]
+  },
+
+  {
+    id: "AST-011",
+    serialNumber: "E14147",
+    name: "Micropump Precision Pump",
+    
+    brand: "Micropump",
+    modelCode: "E14147",
+    equipmentType: "Pump",
+    currentStatus: "In Operation",
+    criticalityLevel: "Low",
+    
+    installDate: "2024-02-28",
+    lastMaintenance: null,
+    
+    location: {
+      facility: "Cenovus Lima Refinery",
+      area: "Husky Energy Lab"
+    },
+    
+    operatingConditions: {
+      flowRate: "5 GPM",
+      pressure: "50 PSI",
+      temperature: "80°F",
+      fluidType: "Chemical"
+    },
+    
+    // This asset has wear components but NO parts history
+    wearComponents: [
+      {
+        partNumber: "MP-GEAR-001",
+        description: "Gear Set",
+        recommendedReplacementInterval: "24 months",
+        lastReplaced: null
+      }
+    ],
+    
+    documentation: [],
+    billOfMaterials: [
+      {
+        partNumber: "MP-GEAR-001",
+        description: "Gear Set",
+        quantity: 1,
+        isWearItem: true
+      }
+    ],
+    
+    imageUrl: null,
+    notes: []
+  },
+
+  {
+    id: "AST-012",
+    serialNumber: "85415694",
+    name: "Sundyne LMV-311 Pump",
+    
+    brand: "Sundyne",
+    modelCode: "LMV-311",
+    equipmentType: "Pump",
+    currentStatus: "Unknown",
+    criticalityLevel: "Medium",
+    
+    installDate: "2023-09-10",
+    lastMaintenance: null,
+    
+    location: {
+      facility: "PBF Energy Toledo",
+      area: "Refining Unit"
+    },
+    
+    operatingConditions: {
+      flowRate: "280 GPM",
+      pressure: "160 PSI",
+      temperature: "110°F",
+      fluidType: "Oil"
+    },
+    
+    // This asset has wear components but NO parts history
+    wearComponents: [
+      {
+        partNumber: "SUN-SEAL-311",
+        description: "Mechanical Seal Assembly",
+        recommendedReplacementInterval: "15 months",
+        lastReplaced: null
+      }
+    ],
+    
+    documentation: [],
+    billOfMaterials: [
+      {
+        partNumber: "SUN-SEAL-311",
+        description: "Mechanical Seal Assembly",
+        quantity: 1,
+        isWearItem: true
+      }
+    ],
+    
+    imageUrl: null,
+    notes: []
   }
 ];
 
@@ -462,5 +870,27 @@ export const mockOrders: Order[] = [
     priority: 'medium',
     isManualEntry: true,
     hasApiIntegration: false
+  },
+  {
+    id: 'ORD-005',
+    orderNumber: 'PO-2024-1567',
+    assetId: 'AST-010', // Milton Roy MRA Pump - Cenovus
+    type: 'maintenance',
+    status: 'delivered',
+    orderDate: '2024-08-10',
+    deliveredDate: '2024-08-14',
+    totalAmount: 1450.00,
+    items: [
+      {
+        partNumber: 'MR-SEAL-MRA',
+        description: 'Mechanical Seal',
+        quantity: 1,
+        unitPrice: 1450.00,
+        isWearItem: true
+      }
+    ],
+    vendor: 'Milton Roy Direct',
+    priority: 'high',
+    hasApiIntegration: true
   }
 ];
