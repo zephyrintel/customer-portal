@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, User, Package, Filter, Search } from 'lucide-react';
+import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, User, Package, Filter, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { mockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
 import MaintenanceSchedulingModal from '../components/Maintenance/MaintenanceSchedulingModal';
@@ -18,12 +18,17 @@ interface MaintenanceItem {
   nextDueDate?: Date;
 }
 
+type SortField = 'name' | 'priority' | 'status' | 'lastMaint' | 'equipmentType';
+type SortDirection = 'asc' | 'desc';
+
 const MaintenancePage: React.FC = () => {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'needs-attention' | 'scheduled' | 'history'>('needs-attention');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<SortField>('priority');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Generate prioritized maintenance list from assets
   const maintenanceItems = useMemo((): MaintenanceItem[] => {
@@ -113,27 +118,12 @@ const MaintenancePage: React.FC = () => {
       }
     });
 
-    // Sort by priority (critical first, then by days overdue)
-    return items.sort((a, b) => {
-      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-      
-      if (priorityDiff !== 0) return priorityDiff;
-      
-      // If same priority, sort by days overdue (most overdue first)
-      if (a.daysOverdue && b.daysOverdue) {
-        return b.daysOverdue - a.daysOverdue;
-      }
-      if (a.daysOverdue) return -1;
-      if (b.daysOverdue) return 1;
-      
-      return 0;
-    });
+    return items;
   }, []);
 
-  // Filter maintenance items
-  const filteredItems = useMemo(() => {
-    return maintenanceItems.filter(item => {
+  // Filter and sort maintenance items
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = maintenanceItems.filter(item => {
       const matchesPriority = priorityFilter === 'all' || item.priority === priorityFilter;
       const matchesSearch = searchTerm === '' || 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,7 +132,45 @@ const MaintenancePage: React.FC = () => {
       
       return matchesPriority && matchesSearch;
     });
-  }, [maintenanceItems, priorityFilter, searchTerm]);
+
+    // Sort the filtered items
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'priority':
+          const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+          aValue = priorityOrder[a.priority];
+          bValue = priorityOrder[b.priority];
+          break;
+        case 'status':
+          aValue = a.status.toLowerCase();
+          bValue = b.status.toLowerCase();
+          break;
+        case 'lastMaint':
+          aValue = a.lastMaint ? new Date(a.lastMaint).getTime() : 0;
+          bValue = b.lastMaint ? new Date(b.lastMaint).getTime() : 0;
+          break;
+        case 'equipmentType':
+          aValue = a.equipmentType.toLowerCase();
+          bValue = b.equipmentType.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [maintenanceItems, priorityFilter, searchTerm, sortField, sortDirection]);
 
   const handleScheduleNow = (asset: Asset) => {
     setSelectedAsset(asset);
@@ -153,6 +181,24 @@ const MaintenancePage: React.FC = () => {
     setShowModal(false);
     setSelectedAsset(null);
     // In a real app, you would refresh the data here
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ChevronUp className="w-4 h-4 text-gray-300" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp className="w-4 h-4 text-gray-600" />
+      : <ChevronDown className="w-4 h-4 text-gray-600" />;
   };
 
   const getPriorityIcon = (priority: MaintenanceItem['priority']) => {
@@ -171,13 +217,33 @@ const MaintenancePage: React.FC = () => {
   const getPriorityColor = (priority: MaintenanceItem['priority']) => {
     switch (priority) {
       case 'critical':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800';
       case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-100 text-orange-800';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800';
+    }
+  };
+
+  // Use the same status badge function as AssetsTable
+  const getStatusBadge = (status: Asset['currentStatus']) => {
+    const baseClasses = "px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide";
+    
+    switch (status) {
+      case 'In Operation':
+        return `${baseClasses} bg-green-100 text-green-800`;
+      case 'Intermittent Operation':
+        return `${baseClasses} bg-blue-100 text-blue-800`;
+      case 'Not Commissioned':
+        return `${baseClasses} bg-yellow-100 text-yellow-800`;
+      case 'Not In Use':
+        return `${baseClasses} bg-red-100 text-red-800`;
+      case 'Unknown':
+        return `${baseClasses} bg-gray-100 text-gray-800`;
+      default:
+        return `${baseClasses} bg-gray-100 text-gray-800`;
     }
   };
 
@@ -210,7 +276,7 @@ const MaintenancePage: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'needs-attention', label: 'Needs Attention', count: filteredItems.length },
+    { id: 'needs-attention', label: 'Needs Attention', count: filteredAndSortedItems.length },
     { id: 'scheduled', label: 'Scheduled', count: 0 },
     { id: 'history', label: 'History', count: 0 }
   ];
@@ -282,83 +348,111 @@ const MaintenancePage: React.FC = () => {
                 </div>
 
                 <div className="text-sm text-gray-600">
-                  Showing {filteredItems.length} of {maintenanceItems.length} items
+                  Showing {filteredAndSortedItems.length} of {maintenanceItems.length} items
                 </div>
               </div>
 
               {/* Maintenance Items Table */}
-              {filteredItems.length > 0 ? (
+              {filteredAndSortedItems.length > 0 ? (
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Action
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Equipment
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Priority
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Maintenance
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Reason
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50 transition-colors duration-150">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              onClick={() => handleScheduleNow(item.asset)}
-                              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            >
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Schedule Now
-                            </button>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <span className="text-lg mr-3">{getEquipmentTypeIcon(item.equipmentType)}</span>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                <div className="text-sm text-gray-500">{item.location}</div>
-                              </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+                            onClick={() => handleSort('name')}
+                          >
+                            <div className="flex items-center space-x-1">
+                              <span>Equipment</span>
+                              {getSortIcon('name')}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(item.priority)}`}>
-                              {getPriorityIcon(item.priority)}
-                              <span className="ml-1 capitalize">{item.priority}</span>
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+                            onClick={() => handleSort('priority')}
+                          >
+                            <div className="flex items-center space-x-1">
+                              <span>Priority</span>
+                              {getSortIcon('priority')}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-gray-900">{item.status}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{formatDate(item.lastMaint)}</div>
-                            {item.daysOverdue && (
-                              <div className="text-xs text-red-600 font-medium">
-                                {item.daysOverdue} days overdue
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900 max-w-xs" title={item.reason}>
-                              {item.reason}
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+                            onClick={() => handleSort('status')}
+                          >
+                            <div className="flex items-center space-x-1">
+                              <span>Status</span>
+                              {getSortIcon('status')}
                             </div>
-                          </td>
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+                            onClick={() => handleSort('lastMaint')}
+                          >
+                            <div className="flex items-center space-x-1">
+                              <span>Last Maintenance</span>
+                              {getSortIcon('lastMaint')}
+                            </div>
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Reason
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredAndSortedItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => handleScheduleNow(item.asset)}
+                                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                              >
+                                <Calendar className="w-4 h-4 mr-2" />
+                                Schedule Now
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <span className="text-lg mr-3">{getEquipmentTypeIcon(item.equipmentType)}</span>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                  <div className="text-sm text-gray-500">{item.location}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
+                                {getPriorityIcon(item.priority)}
+                                <span className="ml-1 capitalize">{item.priority}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={getStatusBadge(item.status as Asset['currentStatus'])}>
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatDate(item.lastMaint)}</div>
+                              {item.daysOverdue && (
+                                <div className="text-xs text-red-600 font-medium">
+                                  {item.daysOverdue} days overdue
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900 max-w-xs" title={item.reason}>
+                                {item.reason}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12">
