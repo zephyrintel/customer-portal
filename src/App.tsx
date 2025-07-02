@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout/Layout';
 import DashboardPage from './pages/DashboardPage';
 import AssetsPage from './pages/AssetsPage';
+import MaintenancePage from './pages/MaintenancePage';
 import AssetDetail from './components/AssetDetail';
 
 function App() {
@@ -13,7 +14,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/:id" element={<AssetDetail />} />
-          <Route path="maintenance" element={<div className="p-8"><h1 className="text-2xl font-bold">Maintenance Page</h1><p>Coming soon...</p></div>} />
+          <Route path="maintenance" element={<MaintenancePage />} />
           <Route path="orders" element={<div className="p-8"><h1 className="text-2xl font-bold">Parts Orders Page</h1><p>Coming soon...</p></div>} />
           <Route path="documentation" element={<div className="p-8"><h1 className="text-2xl font-bold">Documentation Page</h1><p>Coming soon...</p></div>} />
           <Route path="notifications" element={<div className="p-8"><h1 className="text-2xl font-bold">Notifications Page</h1><p>Coming soon...</p></div>} />
