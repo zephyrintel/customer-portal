@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Calendar, User, Wrench, AlertCircle, Save } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Calendar, User, Wrench, AlertCircle, Save, Package } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 
 interface MaintenanceSchedulingModalProps {
@@ -22,7 +22,7 @@ const MaintenanceSchedulingModal: React.FC<MaintenanceSchedulingModalProps> = ({
     priority: 'medium',
     description: '',
     estimatedDuration: '2',
-    requiredParts: ''
+    requiredParts: [] as string[]
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -48,6 +48,38 @@ const MaintenanceSchedulingModal: React.FC<MaintenanceSchedulingModalProps> = ({
     { value: 'high', label: 'High' },
     { value: 'critical', label: 'Critical' }
   ];
+
+  // Generate available parts from asset's wear components and BOM
+  const availableParts = useMemo(() => {
+    const parts = new Map<string, { partNumber: string; description: string; isWearItem: boolean }>();
+    
+    // Add wear components
+    asset.wearComponents.forEach(component => {
+      parts.set(component.partNumber, {
+        partNumber: component.partNumber,
+        description: component.description,
+        isWearItem: true
+      });
+    });
+    
+    // Add BOM items
+    asset.billOfMaterials.forEach(item => {
+      if (!parts.has(item.partNumber)) {
+        parts.set(item.partNumber, {
+          partNumber: item.partNumber,
+          description: item.description,
+          isWearItem: item.isWearItem
+        });
+      }
+    });
+    
+    return Array.from(parts.values()).sort((a, b) => {
+      // Sort wear items first, then alphabetically
+      if (a.isWearItem && !b.isWearItem) return -1;
+      if (!a.isWearItem && b.isWearItem) return 1;
+      return a.description.localeCompare(b.description);
+    });
+  }, [asset]);
 
   const validateForm = (): boolean => {
     const newErrors: string[] = [];
@@ -102,7 +134,7 @@ const MaintenanceSchedulingModal: React.FC<MaintenanceSchedulingModalProps> = ({
         priority: 'medium',
         description: '',
         estimatedDuration: '2',
-        requiredParts: ''
+        requiredParts: []
       });
       setErrors([]);
       
@@ -120,6 +152,15 @@ const MaintenanceSchedulingModal: React.FC<MaintenanceSchedulingModalProps> = ({
     }
   };
 
+  const handlePartToggle = (partNumber: string) => {
+    setFormData(prev => ({
+      ...prev,
+      requiredParts: prev.requiredParts.includes(partNumber)
+        ? prev.requiredParts.filter(p => p !== partNumber)
+        : [...prev.requiredParts, partNumber]
+    }));
+  };
+
   const getMinDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -132,7 +173,7 @@ const MaintenanceSchedulingModal: React.FC<MaintenanceSchedulingModalProps> = ({
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-gray-900 flex items-center">
@@ -278,20 +319,45 @@ const MaintenanceSchedulingModal: React.FC<MaintenanceSchedulingModalProps> = ({
               </div>
 
               {/* Required Parts */}
-              <div>
-                <label htmlFor="requiredParts" className="block text-sm font-medium text-gray-700 mb-1">
-                  Required Parts (Optional)
-                </label>
-                <textarea
-                  id="requiredParts"
-                  value={formData.requiredParts}
-                  onChange={(e) => setFormData(prev => ({ ...prev, requiredParts: e.target.value }))}
-                  rows={2}
-                  placeholder="List any parts that may be needed..."
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  disabled={isLoading}
-                />
-              </div>
+              {availableParts.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <Package className="w-4 h-4 inline mr-1" />
+                    Required Parts (Optional)
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3 bg-gray-50">
+                    <div className="space-y-2">
+                      {availableParts.map((part) => (
+                        <label key={part.partNumber} className="flex items-start space-x-3 cursor-pointer hover:bg-white p-2 rounded transition-colors duration-150">
+                          <input
+                            type="checkbox"
+                            checked={formData.requiredParts.includes(part.partNumber)}
+                            onChange={() => handlePartToggle(part.partNumber)}
+                            className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            disabled={isLoading}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-mono text-gray-600">{part.partNumber}</span>
+                              {part.isWearItem && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  Wear Item
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-900 mt-1">{part.description}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {formData.requiredParts.length > 0 && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      {formData.requiredParts.length} part{formData.requiredParts.length > 1 ? 's' : ''} selected
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Error Messages */}
               {errors.length > 0 && (
