@@ -14,16 +14,16 @@ interface MaintenanceItem {
   name: string;
   status: string;
   lastMaint: string | null;
-  reason: string;
   priority: 'critical' | 'high' | 'medium' | 'low';
   equipmentType: string;
   location: string;
   asset: Asset;
   daysOverdue?: number;
   nextDueDate?: Date;
+  maintenanceDetails: string; // Internal field for tracking reasons, not displayed
 }
 
-type SortField = 'name' | 'priority' | 'status' | 'lastMaint' | 'equipmentType';
+type SortField = 'name' | 'priority' | 'status' | 'lastMaint' | 'equipmentType' | 'location';
 type SortDirection = 'asc' | 'desc';
 
 const MaintenancePage: React.FC = () => {
@@ -112,13 +112,13 @@ const MaintenancePage: React.FC = () => {
           name: asset.name,
           status: asset.currentStatus,
           lastMaint: asset.lastMaintenance,
-          reason: reasons.join('; '),
           priority,
           equipmentType: asset.equipmentType,
           location: `${asset.location.facility} - ${asset.location.area}`,
           asset,
           daysOverdue,
-          nextDueDate
+          nextDueDate,
+          maintenanceDetails: reasons.join('; ') // Store internally but don't display
         });
       }
     });
@@ -164,6 +164,10 @@ const MaintenancePage: React.FC = () => {
         case 'equipmentType':
           aValue = a.equipmentType.toLowerCase();
           bValue = b.equipmentType.toLowerCase();
+          break;
+        case 'location':
+          aValue = a.location.toLowerCase();
+          bValue = b.location.toLowerCase();
           break;
         default:
           return 0;
@@ -461,6 +465,15 @@ const MaintenancePage: React.FC = () => {
                           </th>
                           <th 
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+                            onClick={() => handleSort('location')}
+                          >
+                            <div className="flex items-center space-x-1">
+                              <span>Location</span>
+                              {getSortIcon('location')}
+                            </div>
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
                             onClick={() => handleSort('priority')}
                           >
                             <div className="flex items-center space-x-1">
@@ -485,9 +498,6 @@ const MaintenancePage: React.FC = () => {
                               <span>Last Maintenance</span>
                               {getSortIcon('lastMaint')}
                             </div>
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Reason
                           </th>
                         </tr>
                       </thead>
@@ -516,9 +526,12 @@ const MaintenancePage: React.FC = () => {
                                 <span className="text-lg mr-3">{getEquipmentTypeIcon(item.equipmentType)}</span>
                                 <div>
                                   <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                  <div className="text-sm text-gray-500">{item.location}</div>
+                                  <div className="text-sm text-gray-500">{item.equipmentType}</div>
                                 </div>
                               </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{item.location}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
@@ -538,11 +551,6 @@ const MaintenancePage: React.FC = () => {
                                   {item.daysOverdue} days overdue
                                 </div>
                               )}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900 max-w-xs" title={item.reason}>
-                                {item.reason}
-                              </div>
                             </td>
                           </tr>
                         ))}
