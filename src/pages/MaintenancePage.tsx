@@ -1,8 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, User, Package, Filter, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { mockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
-import MaintenanceSchedulingModal from '../components/Maintenance/MaintenanceSchedulingModal';
+import { useAssetSelection } from '../hooks/useAssetSelection';
+import BulkActionBar from '../components/BulkActions/BulkActionBar';
+import MaintenanceScheduleModal from '../components/BulkActions/MaintenanceScheduleModal';
+import { useBulkOperations } from '../hooks/useBulkOperations';
+import NotificationToast from '../components/BulkActions/NotificationToast';
+import AssetDetailDrawer from '../components/Maintenance/AssetDetailDrawer';
 
 interface MaintenanceItem {
   id: string;
@@ -22,13 +27,13 @@ type SortField = 'name' | 'priority' | 'status' | 'lastMaint' | 'equipmentType';
 type SortDirection = 'asc' | 'desc';
 
 const MaintenancePage: React.FC = () => {
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'needs-attention' | 'scheduled' | 'history'>('needs-attention');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
 
   // Generate prioritized maintenance list from assets
   const maintenanceItems = useMemo((): MaintenanceItem[] => {
@@ -172,16 +177,30 @@ const MaintenancePage: React.FC = () => {
     return filtered;
   }, [maintenanceItems, priorityFilter, searchTerm, sortField, sortDirection]);
 
-  const handleScheduleNow = (asset: Asset) => {
-    setSelectedAsset(asset);
-    setShowModal(true);
-  };
+  // Convert maintenance items to assets for selection hook
+  const assetsForSelection = filteredAndSortedItems.map(item => item.asset);
 
-  const handleScheduleComplete = () => {
-    setShowModal(false);
-    setSelectedAsset(null);
-    // In a real app, you would refresh the data here
-  };
+  const {
+    selectedIds,
+    selectedAssets,
+    selectedCount,
+    isAllSelected,
+    isIndeterminate,
+    hasSelection,
+    toggleSelection,
+    selectAll,
+    clearSelection
+  } = useAssetSelection(assetsForSelection);
+
+  const {
+    operationState,
+    clearOperationState,
+    scheduleMaintenance,
+    orderParts,
+    exportAssets,
+    addTags,
+    archiveAssets
+  } = useBulkOperations();
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -227,7 +246,7 @@ const MaintenancePage: React.FC = () => {
     }
   };
 
-  // Use the same status badge function as AssetsTable
+  // Reuse the same status badge function as AssetsTable
   const getStatusBadge = (status: Asset['currentStatus']) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide";
     
@@ -273,6 +292,61 @@ const MaintenancePage: React.FC = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleRowClick = (assetId: string, event: React.MouseEvent) => {
+    // Don't open drawer if clicking on checkbox
+    if ((event.target as HTMLElement).closest('input[type="checkbox"]')) {
+      return;
+    }
+    setSelectedAssetId(assetId);
+  };
+
+  const handleCheckboxClick = (assetId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    toggleSelection(assetId, event.shiftKey);
+  };
+
+  const handleSelectAllChange = () => {
+    if (isAllSelected || isIndeterminate) {
+      clearSelection();
+    } else {
+      selectAll();
+    }
+  };
+
+  // Bulk operation handlers
+  const handleScheduleMaintenance = () => {
+    setShowMaintenanceModal(true);
+  };
+
+  const handleMaintenanceSchedule = async (scheduleData: any) => {
+    await scheduleMaintenance(selectedAssets, scheduleData);
+    setShowMaintenanceModal(false);
+    clearSelection();
+  };
+
+  const handleOrderParts = async () => {
+    await orderParts(selectedAssets);
+    clearSelection();
+  };
+
+  const handleExport = async (format: 'csv' | 'pdf' | 'excel') => {
+    await exportAssets(selectedAssets, format);
+    clearSelection();
+  };
+
+  const handleAddTags = async () => {
+    const mockTags = ['maintenance-scheduled', 'high-priority'];
+    await addTags(selectedAssets, mockTags);
+    clearSelection();
+  };
+
+  const handleArchive = async () => {
+    if (window.confirm(`Are you sure you want to archive ${selectedCount} asset${selectedCount > 1 ? 's' : ''}?`)) {
+      await archiveAssets(selectedAssets);
+      clearSelection();
+    }
   };
 
   const tabs = [
@@ -349,18 +423,32 @@ const MaintenancePage: React.FC = () => {
 
                 <div className="text-sm text-gray-600">
                   Showing {filteredAndSortedItems.length} of {maintenanceItems.length} items
+                  {selectedCount > 0 && (
+                    <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                      {selectedCount} selected
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Maintenance Items Table */}
               {filteredAndSortedItems.length > 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden transition-all duration-300 ${hasSelection ? 'mb-20' : 'mb-0'}`}>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Action
+                          <th className="px-6 py-3 text-left">
+                            <input
+                              type="checkbox"
+                              checked={isAllSelected}
+                              ref={(input) => {
+                                if (input) input.indeterminate = isIndeterminate;
+                              }}
+                              onChange={handleSelectAllChange}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              aria-label="Select all assets"
+                            />
                           </th>
                           <th 
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
@@ -405,15 +493,23 @@ const MaintenancePage: React.FC = () => {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {filteredAndSortedItems.map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors duration-150">
+                          <tr 
+                            key={item.id} 
+                            onClick={(e) => handleRowClick(item.id, e)}
+                            className={`transition-colors duration-150 ease-in-out cursor-pointer ${
+                              selectedIds.has(item.id) 
+                                ? 'bg-blue-50 border-blue-200' 
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <button
-                                onClick={() => handleScheduleNow(item.asset)}
-                                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                              >
-                                <Calendar className="w-4 h-4 mr-2" />
-                                Schedule Now
-                              </button>
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(item.id)}
+                                onChange={(e) => handleCheckboxClick(item.id, e as any)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                aria-label={`Select ${item.name}`}
+                              />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
@@ -487,15 +583,47 @@ const MaintenancePage: React.FC = () => {
           )}
         </div>
 
-        {/* Maintenance Scheduling Modal */}
-        {selectedAsset && (
-          <MaintenanceSchedulingModal
-            isOpen={showModal}
-            onClose={() => setShowModal(false)}
-            asset={selectedAsset}
-            onSchedule={handleScheduleComplete}
-          />
-        )}
+        {/* Bulk Action Bar */}
+        <BulkActionBar
+          selectedCount={selectedCount}
+          selectedAssets={selectedAssets}
+          operationState={operationState}
+          onClearSelection={clearSelection}
+          onScheduleMaintenance={handleScheduleMaintenance}
+          onOrderParts={handleOrderParts}
+          onExport={handleExport}
+          onAddTags={handleAddTags}
+          onArchive={handleArchive}
+        />
+
+        {/* Asset Detail Drawer */}
+        <AssetDetailDrawer
+          assetId={selectedAssetId}
+          isOpen={!!selectedAssetId}
+          onClose={() => setSelectedAssetId(null)}
+        />
+
+        {/* Maintenance Schedule Modal */}
+        <MaintenanceScheduleModal
+          isOpen={showMaintenanceModal}
+          onClose={() => setShowMaintenanceModal(false)}
+          selectedAssets={selectedAssets}
+          onSchedule={handleMaintenanceSchedule}
+          isLoading={operationState.isLoading && operationState.operation === 'schedule-maintenance'}
+        />
+
+        {/* Notification Toasts */}
+        <NotificationToast
+          message={operationState.success}
+          type="success"
+          onClose={clearOperationState}
+        />
+        
+        <NotificationToast
+          message={operationState.error}
+          type="error"
+          onClose={clearOperationState}
+        />
       </div>
     </div>
   );
