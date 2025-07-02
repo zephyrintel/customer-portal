@@ -3,8 +3,8 @@ import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp,
 import { mockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
 import { useAssetSelection } from '../hooks/useAssetSelection';
-import BulkActionBar from '../components/BulkActions/BulkActionBar';
-import MaintenanceScheduleModal from '../components/BulkActions/MaintenanceScheduleModal';
+import MaintenanceBulkActionBar from '../components/BulkActions/MaintenanceBulkActionBar';
+import MaintenanceCarouselModal from '../components/BulkActions/MaintenanceCarouselModal';
 import { useBulkOperations } from '../hooks/useBulkOperations';
 import NotificationToast from '../components/BulkActions/NotificationToast';
 import AssetDetailDrawer from '../components/Maintenance/AssetDetailDrawer';
@@ -34,6 +34,7 @@ const MaintenancePage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Generate prioritized maintenance list from assets
   const maintenanceItems = useMemo((): MaintenanceItem[] => {
@@ -198,12 +199,7 @@ const MaintenancePage: React.FC = () => {
 
   const {
     operationState,
-    clearOperationState,
-    scheduleMaintenance,
-    orderParts,
-    exportAssets,
-    addTags,
-    archiveAssets
+    clearOperationState
   } = useBulkOperations();
 
   const handleSort = (field: SortField) => {
@@ -324,33 +320,21 @@ const MaintenancePage: React.FC = () => {
     setShowMaintenanceModal(true);
   };
 
-  const handleMaintenanceSchedule = async (scheduleData: any) => {
-    await scheduleMaintenance(selectedAssets, scheduleData);
+  const handleMaintenanceComplete = (completedCount: number) => {
     setShowMaintenanceModal(false);
     clearSelection();
-  };
-
-  const handleOrderParts = async () => {
-    await orderParts(selectedAssets);
-    clearSelection();
-  };
-
-  const handleExport = async (format: 'csv' | 'pdf' | 'excel') => {
-    await exportAssets(selectedAssets, format);
-    clearSelection();
-  };
-
-  const handleAddTags = async () => {
-    const mockTags = ['maintenance-scheduled', 'high-priority'];
-    await addTags(selectedAssets, mockTags);
-    clearSelection();
-  };
-
-  const handleArchive = async () => {
-    if (window.confirm(`Are you sure you want to archive ${selectedCount} asset${selectedCount > 1 ? 's' : ''}?`)) {
-      await archiveAssets(selectedAssets);
-      clearSelection();
-    }
+    
+    // Show success message
+    const message = completedCount === 1 
+      ? 'Maintenance scheduled successfully for 1 asset'
+      : `Maintenance scheduled successfully for ${completedCount} assets`;
+    
+    setSuccessMessage(message);
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 5000);
   };
 
   const tabs = [
@@ -591,17 +575,13 @@ const MaintenancePage: React.FC = () => {
           )}
         </div>
 
-        {/* Bulk Action Bar */}
-        <BulkActionBar
+        {/* Maintenance-Specific Bulk Action Bar */}
+        <MaintenanceBulkActionBar
           selectedCount={selectedCount}
           selectedAssets={selectedAssets}
           operationState={operationState}
           onClearSelection={clearSelection}
           onScheduleMaintenance={handleScheduleMaintenance}
-          onOrderParts={handleOrderParts}
-          onExport={handleExport}
-          onAddTags={handleAddTags}
-          onArchive={handleArchive}
         />
 
         {/* Asset Detail Drawer */}
@@ -611,22 +591,23 @@ const MaintenancePage: React.FC = () => {
           onClose={() => setSelectedAssetId(null)}
         />
 
-        {/* Maintenance Schedule Modal */}
-        <MaintenanceScheduleModal
+        {/* Maintenance Carousel Modal */}
+        <MaintenanceCarouselModal
           isOpen={showMaintenanceModal}
           onClose={() => setShowMaintenanceModal(false)}
           selectedAssets={selectedAssets}
-          onSchedule={handleMaintenanceSchedule}
+          onComplete={handleMaintenanceComplete}
           isLoading={operationState.isLoading && operationState.operation === 'schedule-maintenance'}
         />
 
-        {/* Notification Toasts */}
+        {/* Success Toast */}
         <NotificationToast
-          message={operationState.success}
+          message={successMessage}
           type="success"
-          onClose={clearOperationState}
+          onClose={() => setSuccessMessage(null)}
         />
         
+        {/* Error Toast */}
         <NotificationToast
           message={operationState.error}
           type="error"
