@@ -85,8 +85,8 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
         {/* Metric Section - Fixed height: 96px */}
         <div className="h-24 flex items-center justify-center">
           <MetricDisplay
-            value={totalAssets - assetsWithNoPartsActivity}
-            subtitle={`of ${totalAssets} assets with parts activity`}
+            value={assetsWithNoPartsActivity}
+            subtitle={`of ${totalAssets} assets with no parts history`}
           />
         </div>
         

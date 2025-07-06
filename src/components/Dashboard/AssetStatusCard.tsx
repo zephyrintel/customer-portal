@@ -83,8 +83,8 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
         {/* Metric Section - Fixed height: 96px */}
         <div className="h-24 flex items-center justify-center">
           <MetricDisplay
-            value={operatingAssets}
-            subtitle={`of ${totalAssets} assets operating`}
+            value={assetsNotOperating}
+            subtitle={`of ${totalAssets} assets not operating`}
           />
         </div>
         
