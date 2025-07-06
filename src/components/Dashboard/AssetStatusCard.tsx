@@ -95,7 +95,6 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
         <div className="h-24 flex items-center justify-center">
           <MetricDisplay
             value={assetsNotOperating}
-            subtitle={`of ${totalAssets} assets not operating`}
             valueColor={getMetricColor()}
             cautionSymbol={getCautionSymbol()}
           />
