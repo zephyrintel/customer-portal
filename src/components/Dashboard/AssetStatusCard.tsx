@@ -45,16 +45,6 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
     }
   };
 
-  const getStatusMessage = () => {
-    if (assetsNotOperating === 0) {
-      return 'All equipment is operational';
-    }
-    if (assetsNotOperating === 1) {
-      return '1 asset not in operation';
-    }
-    return `${assetsNotOperating} assets not in operation`;
-  };
-
   const getButtonText = () => {
     return assetsNotOperating === 0 ? 'Review Status' : 'Update Equipment Status';
   };
@@ -112,10 +102,7 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
 
         {/* Status Section - Fixed height: 48px */}
         <div className="h-12 flex items-center justify-center">
-          <StatusIndicator
-            message={getStatusMessage()}
-            type={statusType}
-          />
+          {/* Empty space to maintain alignment with other cards */}
         </div>
       </div>
     </BaseCard>

@@ -47,16 +47,6 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
     }
   };
 
-  const getStatusMessage = () => {
-    if (assetsWithNoPartsActivity === 0) {
-      return 'All equipment has maintenance history';
-    }
-    if (assetsWithNoPartsActivity === 1) {
-      return '1 asset has no parts history';
-    }
-    return `${assetsWithNoPartsActivity} assets have no parts history`;
-  };
-
   const getButtonText = () => {
     return assetsWithNoPartsActivity === 0 ? 'Review History' : 'Review Assets';
   };
@@ -114,10 +104,7 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
 
         {/* Status Section - Fixed height: 48px */}
         <div className="h-12 flex items-center justify-center">
-          <StatusIndicator
-            message={getStatusMessage()}
-            type={statusType}
-          />
+          {/* Empty space to maintain alignment with other cards */}
         </div>
       </div>
     </BaseCard>
