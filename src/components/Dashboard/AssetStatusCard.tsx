@@ -47,12 +47,12 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
 
   const getStatusMessage = () => {
     if (assetsNotOperating === 0) {
-      return '✅ All equipment is operational';
+      return 'All equipment is operational';
     }
     if (assetsNotOperating === 1) {
-      return '⚠️ 1 asset not in operation';
+      return '1 asset not in operation';
     }
-    return `⚠️ ${assetsNotOperating} assets not in operation`;
+    return `${assetsNotOperating} assets not in operation`;
   };
 
   const getButtonText = () => {
@@ -65,6 +65,17 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
       case 'warning': return 'warning';
       case 'error': return 'danger';
     }
+  };
+
+  const getMetricColor = () => {
+    if (operatingPercentage >= 70) return 'text-green-600';
+    if (operatingPercentage >= 50) return 'text-orange-600';
+    return 'text-red-600';
+  };
+
+  const getCautionSymbol = () => {
+    if (assetsNotOperating === 0) return '✅';
+    return '⚠️';
   };
 
   return (
@@ -85,6 +96,8 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
           <MetricDisplay
             value={assetsNotOperating}
             subtitle={`of ${totalAssets} assets not operating`}
+            valueColor={getMetricColor()}
+            cautionSymbol={getCautionSymbol()}
           />
         </div>
         

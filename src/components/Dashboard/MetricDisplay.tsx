@@ -3,6 +3,8 @@ import React from 'react';
 interface MetricDisplayProps {
   value: string | number;
   subtitle?: string;
+  valueColor?: string;
+  cautionSymbol?: string;
   trend?: {
     value: number;
     isPositive: boolean;
@@ -14,13 +16,20 @@ interface MetricDisplayProps {
 const MetricDisplay: React.FC<MetricDisplayProps> = ({
   value,
   subtitle,
+  valueColor = 'text-gray-900',
+  cautionSymbol,
   trend,
   className = ''
 }) => {
   return (
     <div className={`text-center ${className}`}>
       <div className="space-y-1 mb-4">
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <div className="flex items-center justify-center space-x-2">
+          {cautionSymbol && (
+            <span className="text-2xl">{cautionSymbol}</span>
+          )}
+          <p className={`text-3xl font-bold ${valueColor}`}>{value}</p>
+        </div>
         {subtitle && (
           <p className="text-sm text-gray-500">{subtitle}</p>
         )}

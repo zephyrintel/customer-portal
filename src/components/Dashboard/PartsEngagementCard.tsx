@@ -49,12 +49,12 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
 
   const getStatusMessage = () => {
     if (assetsWithNoPartsActivity === 0) {
-      return '✅ All equipment has maintenance history';
+      return 'All equipment has maintenance history';
     }
     if (assetsWithNoPartsActivity === 1) {
-      return '⚠️ 1 asset has no parts history';
+      return '1 asset has no parts history';
     }
-    return `⚠️ ${assetsWithNoPartsActivity} assets have no parts history`;
+    return `${assetsWithNoPartsActivity} assets have no parts history`;
   };
 
   const getButtonText = () => {
@@ -67,6 +67,17 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
       case 'warning': return 'warning';
       case 'error': return 'danger';
     }
+  };
+
+  const getMetricColor = () => {
+    if (engagementPercentage >= 70) return 'text-green-600';
+    if (engagementPercentage >= 50) return 'text-orange-600';
+    return 'text-red-600';
+  };
+
+  const getCautionSymbol = () => {
+    if (assetsWithNoPartsActivity === 0) return '✅';
+    return '⚠️';
   };
 
   return (
@@ -87,6 +98,8 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
           <MetricDisplay
             value={assetsWithNoPartsActivity}
             subtitle={`of ${totalAssets} assets with no parts history`}
+            valueColor={getMetricColor()}
+            cautionSymbol={getCautionSymbol()}
           />
         </div>
         
