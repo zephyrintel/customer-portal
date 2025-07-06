@@ -97,6 +97,7 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
         <div className="h-24 flex items-center justify-center">
           <MetricDisplay
             value={assetsWithNoPartsActivity}
+            subtitle={`of ${totalAssets} assets with no parts history`}
             valueColor={getMetricColor()}
             cautionSymbol={getCautionSymbol()}
           />
