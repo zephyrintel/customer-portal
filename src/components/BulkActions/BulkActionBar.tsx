@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Calendar, Package, Download, Tag, Archive, ChevronDown } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 import { BulkOperationState } from '../../hooks/useBulkOperations';
+import { useDeviceType } from '../../hooks/useTouch';
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -27,21 +28,28 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
   onArchive
 }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const deviceType = useDeviceType();
 
   if (selectedCount === 0) return null;
 
   const isLoading = operationState.isLoading;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 transform transition-transform duration-300 ease-out">
+    <div className={`fixed left-0 right-0 z-50 transform transition-transform duration-300 ease-out ${
+      deviceType === 'mobile' ? 'bottom-16' : 'bottom-0'
+    }`}>
       <div className="bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-pb">
+          <div className={`flex items-center justify-between py-4 ${
+            deviceType === 'mobile' ? 'flex-col space-y-3' : ''
+          }`}>
             {/* Selection Info */}
-            <div className="flex items-center space-x-4">
+            <div className={`flex items-center space-x-4 ${
+              deviceType === 'mobile' ? 'w-full justify-center' : ''
+            }`}>
               <button
                 onClick={onClearSelection}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Clear selection"
                 disabled={isLoading}
               >
@@ -72,23 +80,31 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-2">
+            <div className={`flex items-center space-x-2 ${
+              deviceType === 'mobile' 
+                ? 'w-full justify-center flex-wrap gap-2' 
+                : ''
+            }`}>
               <button
                 onClick={onScheduleMaintenance}
                 disabled={isLoading}
-                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className={`inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  deviceType === 'mobile' ? 'min-h-[44px] flex-1' : ''
+                }`}
               >
                 <Calendar className="w-4 h-4 mr-2" />
-                Schedule Maintenance
+                {deviceType === 'mobile' ? 'Schedule' : 'Schedule Maintenance'}
               </button>
 
               <button
                 onClick={onOrderParts}
                 disabled={isLoading}
-                className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className={`inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                  deviceType === 'mobile' ? 'min-h-[44px] flex-1' : ''
+                }`}
               >
                 <Package className="w-4 h-4 mr-2" />
-                Order Parts
+                {deviceType === 'mobile' ? 'Order' : 'Order Parts'}
               </button>
 
               {/* Export Dropdown */}
@@ -96,7 +112,9 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
                   disabled={isLoading}
-                  className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  className={`inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${
+                    deviceType === 'mobile' ? 'min-h-[44px]' : ''
+                  }`}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export
@@ -104,14 +122,16 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                 </button>
 
                 {showExportMenu && (
-                  <div className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <div className={`absolute ${
+                    deviceType === 'mobile' ? 'bottom-full left-1/2 transform -translate-x-1/2' : 'bottom-full right-0'
+                  } mb-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10`}>
                     <div className="py-1">
                       <button
                         onClick={() => {
                           onExport('csv');
                           setShowExportMenu(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 min-h-[44px] flex items-center"
                       >
                         Export as CSV
                       </button>
@@ -120,7 +140,7 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                           onExport('excel');
                           setShowExportMenu(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 min-h-[44px] flex items-center"
                       >
                         Export as Excel
                       </button>
@@ -129,7 +149,7 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                           onExport('pdf');
                           setShowExportMenu(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 min-h-[44px] flex items-center"
                       >
                         Export as PDF
                       </button>
@@ -138,7 +158,9 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                 )}
               </div>
 
-              <button
+              {deviceType !== 'mobile' && (
+                <>
+                  <button
                 onClick={onAddTags}
                 disabled={isLoading}
                 className="inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
@@ -155,6 +177,8 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                 <Archive className="w-4 h-4 mr-2" />
                 Archive
               </button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ import { useBulkOperations } from '../hooks/useBulkOperations';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { mockAssets } from '../data/mockData';
 import { CheckSquare, Square, Keyboard } from 'lucide-react';
+import { useDeviceType, usePullToRefresh } from '../hooks/useTouch';
 
 const AssetsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const AssetsPage: React.FC = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const searchBarRef = useRef<HTMLInputElement>(null);
+  const deviceType = useDeviceType();
 
   const {
     searchTerm,
@@ -57,6 +59,16 @@ const AssetsPage: React.FC = () => {
     addTags,
     archiveAssets
   } = useBulkOperations();
+
+  // Pull to refresh for mobile
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    // Simulate data refresh
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsLoading(false);
+  };
+
+  const { touchRef, isRefreshing, showRefreshIndicator } = usePullToRefresh(handleRefresh);
 
   // Focus search bar
   const focusSearch = useCallback(() => {
@@ -184,32 +196,59 @@ const AssetsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div 
+      ref={deviceType === 'mobile' ? touchRef : undefined}
+      className="min-h-screen bg-gray-100 py-4 sm:py-8 relative"
+    >
+      {/* Pull to refresh indicator */}
+      {showRefreshIndicator && deviceType === 'mobile' && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-blue-600 text-white text-center py-2 text-sm">
+          {isRefreshing ? 'Refreshing...' : 'Pull to refresh'}
+        </div>
+      )}
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-pt">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Asset Management System</h1>
+              <h1 className={`font-bold text-gray-900 mb-2 ${
+                deviceType === 'mobile' ? 'text-xl' : 'text-3xl'
+              }`}>
+                {deviceType === 'mobile' ? 'Assets' : 'Asset Management System'}
+              </h1>
               <div className="flex items-center space-x-2">
-                <p className="text-gray-600">Monitor and manage your industrial assets</p>
-                <HelpTooltip
+                <p className={`text-gray-600 ${
+                  deviceType === 'mobile' ? 'text-sm' : ''
+                }`}>
+                  {deviceType === 'mobile' 
+                    ? 'Monitor your equipment' 
+                    : 'Monitor and manage your industrial assets'
+                  }
+                </p>
+                {deviceType !== 'mobile' && (
+                  <HelpTooltip
                   title="Keyboard Shortcuts"
                   content="⌘+F to search, ⌘+A to select all, Escape to clear, Enter to open single result"
                 />
+                )}
               </div>
             </div>
             
             {/* Selection Mode Toggle */}
-            <div className="flex items-center space-x-3">
-              <div className="hidden sm:flex items-center space-x-1 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
+            <div className={`flex items-center space-x-3 ${
+              deviceType === 'mobile' ? 'flex-col space-y-2 space-x-0' : ''
+            }`}>
+              {deviceType === 'desktop' && (
+                <div className="hidden sm:flex items-center space-x-1 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
                 <Keyboard className="w-3 h-3" />
                 <span>⌘+F to search</span>
               </div>
+              )}
               
               <button
                 onClick={handleToggleSelectionMode}
-                className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[44px] ${
                   selectionMode
                     ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-blue-500'
@@ -223,7 +262,7 @@ const AssetsPage: React.FC = () => {
                 ) : (
                   <>
                     <Square className="w-4 h-4 mr-2" />
-                    Select Assets
+                    {deviceType === 'mobile' ? 'Select' : 'Select Assets'}
                   </>
                 )}
               </button>
@@ -232,7 +271,7 @@ const AssetsPage: React.FC = () => {
         </div>
         
         {/* Search Bar */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <SearchBar
             ref={searchBarRef}
             searchTerm={searchTerm}
@@ -259,7 +298,13 @@ const AssetsPage: React.FC = () => {
         />
         
         {/* Assets Table or Empty State */}
-        <div className={`transition-all duration-300 ${hasSelection ? 'mb-20' : 'mb-0'}`}>
+        <div className={`transition-all duration-300 ${
+          hasSelection 
+            ? deviceType === 'mobile' 
+              ? 'mb-32' 
+              : 'mb-20' 
+            : 'mb-0'
+        }`}>
           {filteredAssets.length > 0 ? (
             <AssetsTable 
               assets={filteredAssets}

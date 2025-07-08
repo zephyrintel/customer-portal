@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
+import { useDeviceType, useTouch } from '../hooks/useTouch';
+import VirtualList from './VirtualList/VirtualList';
 
 interface AssetsTableProps {
   assets: Asset[];
@@ -24,6 +26,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
   showSelection = false
 }) => {
   const navigate = useNavigate();
+  const deviceType = useDeviceType();
 
   const handleRowClick = (assetId: string, event: React.MouseEvent) => {
     // Don't navigate if clicking on checkbox or if selection is enabled and shift/ctrl is pressed
@@ -117,8 +120,232 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
     }
   };
 
-  return (
+  // Mobile card view for better touch interaction
+  const renderMobileCard = (asset: Asset, index: number) => (
+    <div
+      key={asset.id}
+      onClick={(e) => handleRowClick(asset.id, e)}
+      className={`p-4 bg-white border border-gray-200 rounded-lg mb-3 transition-all duration-150 ease-in-out active:bg-gray-50 ${
+        selectedIds.has(asset.id) 
+          ? 'ring-2 ring-blue-500 border-blue-300' 
+          : 'hover:shadow-md'
+      }`}
+    >
+      {showSelection && (
+        <div className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            checked={selectedIds.has(asset.id)}
+            onChange={(e) => handleCheckboxClick(asset.id, e as any)}
+            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            aria-label={`Select ${asset.name}`}
+          />
+        </div>
+      )}
+      
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <span className="text-2xl flex-shrink-0">{getEquipmentTypeIcon(asset.equipmentType)}</span>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold text-gray-900 truncate">
+              {asset.name}
+            </h3>
+            <p className="text-sm text-gray-500 truncate">
+              {asset.brand} • {asset.equipmentType}
+            </p>
+          </div>
+        </div>
+        <span className={getCriticalityBadge(asset.criticalityLevel)}>
+          {asset.criticalityLevel}
+        </span>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <span className="font-medium text-gray-700">Serial:</span>
+          <p className="font-mono text-gray-900 text-xs mt-1">{asset.serialNumber}</p>
+        </div>
+        <div>
+          <span className="font-medium text-gray-700">Location:</span>
+          <p className="text-gray-900 text-xs mt-1">{asset.location.facility}</p>
+        </div>
+        <div>
+          <span className="font-medium text-gray-700">Install Date:</span>
+          <p className="text-gray-900 text-xs mt-1">{formatDate(asset.installDate)}</p>
+        </div>
+        <div>
+          <span className="font-medium text-gray-700">Status:</span>
+          <div className="mt-1">
+            <span className={getStatusBadge(asset.currentStatus)}>
+              {asset.currentStatus}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Tablet optimized table with larger touch targets
+  const renderTabletTable = () => (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <h2 className="text-xl font-semibold text-gray-900">Industrial Assets</h2>
+        <p className="text-sm text-gray-600 mt-1">
+          {showSelection 
+            ? 'Tap assets to select for bulk operations' 
+            : 'Tap any row to view asset details'
+          }
+        </p>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {showSelection && (
+                <th className="px-6 py-4 text-left">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = isIndeterminate;
+                    }}
+                    onChange={handleSelectAllChange}
+                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    aria-label="Select all assets"
+                  />
+                </th>
+              )}
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Equipment
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Location
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Priority
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {assets.map((asset) => (
+              <tr
+                key={asset.id}
+                onClick={(e) => handleRowClick(asset.id, e)}
+                className={`transition-colors duration-150 ease-in-out cursor-pointer min-h-[60px] ${
+                  selectedIds.has(asset.id) 
+                    ? 'bg-blue-50 border-blue-200' 
+                    : 'hover:bg-gray-50 active:bg-gray-100'
+                }`}
+              >
+                {showSelection && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(asset.id)}
+                      onChange={(e) => handleCheckboxClick(asset.id, e as any)}
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      aria-label={`Select ${asset.name}`}
+                    />
+                  </td>
+                )}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <span className="text-xl mr-3">{getEquipmentTypeIcon(asset.equipmentType)}</span>
+                    <div className="flex flex-col">
+                      <div className="text-base font-medium text-gray-900">
+                        {asset.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {asset.brand} • {asset.equipmentType}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex flex-col">
+                    <div className="text-base font-medium text-gray-900">
+                      {asset.location.facility}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {asset.location.area}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={getStatusBadge(asset.currentStatus)}>
+                    {asset.currentStatus}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={getCriticalityBadge(asset.criticalityLevel)}>
+                    {asset.criticalityLevel}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile View */}
+      {deviceType === 'mobile' && (
+        <div className="space-y-3">
+          {showSelection && (
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center space-x-3 min-h-[44px]">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = isIndeterminate;
+                    }}
+                    onChange={handleSelectAllChange}
+                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-base font-medium text-gray-900">
+                    Select All ({assets.length})
+                  </span>
+                </label>
+                {selectedIds.size > 0 && (
+                  <span className="text-sm text-blue-600 font-medium">
+                    {selectedIds.size} selected
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {assets.length > 50 ? (
+            <VirtualList
+              items={assets}
+              itemHeight={180}
+              containerHeight={600}
+              renderItem={renderMobileCard}
+              className="px-1"
+            />
+          ) : (
+            <div className="space-y-3">
+              {assets.map((asset, index) => renderMobileCard(asset, index))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tablet View */}
+      {deviceType === 'tablet' && renderTabletTable()}
+
+      {/* Desktop View */}
+      {deviceType === 'desktop' && (
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900">Industrial Assets</h2>
         <p className="text-sm text-gray-600 mt-1">
@@ -238,13 +465,15 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
           </tbody>
         </table>
       </div>
+    </div>
+      )}
       
       {assets.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-sm">No assets found</p>
+          <p className="text-gray-500 text-base">No assets found</p>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

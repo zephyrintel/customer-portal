@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, Command } from 'lucide-react';
 import { SearchSuggestion } from '../../types/Search';
 import SearchSuggestions from './SearchSuggestions';
+import { useDeviceType } from '../../hooks/useTouch';
 
 interface SearchBarProps {
   searchTerm: string;
@@ -28,6 +29,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const deviceType = useDeviceType();
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -115,7 +117,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     <div ref={containerRef} className="relative w-full max-w-2xl mx-auto">
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search className={`h-5 w-5 transition-colors duration-200 ${
+          <Search className={`h-6 w-6 transition-colors duration-200 ${
             isSearching ? 'text-blue-500 animate-pulse' : 'text-gray-400'
           }`} />
         </div>
@@ -128,9 +130,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="block w-full pl-12 pr-20 py-4 text-lg border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          className={`block w-full pl-14 pr-20 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white ${
+            deviceType === 'mobile' 
+              ? 'py-4 text-base min-h-[44px]' 
+              : 'py-4 text-lg'
+          }`}
           autoComplete="off"
           spellCheck="false"
+          inputMode="search"
+          enterKeyHint="search"
         />
         
         <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-4">
@@ -143,17 +151,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
           {searchTerm && (
             <button
               onClick={handleClear}
-              className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-md hover:bg-gray-100"
+              className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-md hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Clear search"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           )}
           
-          <div className="hidden sm:flex items-center space-x-1 text-xs text-gray-400">
+          {deviceType === 'desktop' && (
+            <div className="hidden sm:flex items-center space-x-1 text-xs text-gray-400">
             <Command className="h-3 w-3" />
             <span>F</span>
           </div>
+          )}
         </div>
       </div>
 
