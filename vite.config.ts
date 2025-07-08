@@ -10,8 +10,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          icons: ['lucide-react'],
-          utils: ['src/utils/dateUtils', 'src/utils/stockUtils', 'src/utils/maintenanceUtils']
+          icons: ['lucide-react']
         }
       }
     },
