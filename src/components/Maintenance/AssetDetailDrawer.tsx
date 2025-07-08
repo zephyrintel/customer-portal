@@ -5,6 +5,8 @@ import { Asset } from '../../types/Asset';
 import WearComponentCard from '../WearComponents/WearComponentCard';
 import DocumentItem from '../Documentation/DocumentItem';
 import OrdersSection from '../Orders/OrdersSection';
+import { getAssetMaintenanceStatus } from '../../utils/maintenanceUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 interface AssetDetailDrawerProps {
   assetId: string | null;
@@ -38,15 +40,6 @@ const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({
   }, [isOpen]);
 
   if (!isOpen || !asset) return null;
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   const getStatusBadge = (status: Asset['currentStatus']) => {
     const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium";
@@ -105,34 +98,7 @@ const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({
     }
   };
 
-  const getWearComponentsStatus = () => {
-    if (asset.wearComponents.length === 0) return null;
-    
-    let overdueCount = 0;
-    let dueSoonCount = 0;
-    
-    asset.wearComponents.forEach(component => {
-      if (!component.lastReplaced || !component.recommendedReplacementInterval) return;
-      
-      const lastReplacedDate = new Date(component.lastReplaced);
-      const intervalMonths = parseInt(component.recommendedReplacementInterval.split(' ')[0]);
-      const nextDueDate = new Date(lastReplacedDate);
-      nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
-      
-      const today = new Date();
-      const daysUntilDue = Math.ceil((nextDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilDue < 0) {
-        overdueCount++;
-      } else if (daysUntilDue <= 30) {
-        dueSoonCount++;
-      }
-    });
-    
-    return { overdueCount, dueSoonCount };
-  };
-
-  const wearStatus = getWearComponentsStatus();
+  const wearStatus = getAssetMaintenanceStatus(asset);
 
   const tabs = [
     { id: 'overview', label: 'Overview', count: null },
@@ -140,7 +106,7 @@ const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({
       id: 'wear-components', 
       label: 'Wear Components', 
       count: asset.wearComponents.length,
-      hasAlert: wearStatus && (wearStatus.overdueCount > 0 || wearStatus.dueSoonCount > 0)
+      hasAlert: wearStatus.hasMaintenanceDue
     },
     { id: 'documentation', label: 'Documentation', count: asset.documentation.length },
     { id: 'orders', label: 'Orders', count: null }
@@ -382,7 +348,7 @@ const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({
               <div className="space-y-4">
                 {asset.wearComponents.length > 0 ? (
                   <>
-                    {wearStatus && (wearStatus.overdueCount > 0 || wearStatus.dueSoonCount > 0) && (
+                    {wearStatus.hasMaintenanceDue && (
                       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                         <div className="flex items-center">
                           <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />
@@ -400,7 +366,10 @@ const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({
                     
                     <div className="space-y-4">
                       {asset.wearComponents.map((component, index) => (
-                        <WearComponentCard key={`${component.partNumber}-${index}`} component={component} />
+                        <WearComponentCard 
+                          key={`${component.partNumber}-${index}`} 
+                          component={component}
+                        />
                       ))}
                     </div>
                   </>

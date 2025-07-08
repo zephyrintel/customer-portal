@@ -45,13 +45,27 @@ export const mockAssets: Asset[] = [
         partNumber: "55916",
         description: "SHIM FASTENAL NUMBER 7041808",
         recommendedReplacementInterval: "6 months",
-        lastReplaced: "2025-03-15"
+        lastReplaced: "2025-03-15",
+        stockInfo: {
+          quantityOnHand: 12,
+          quantityAvailable: 8,
+          reorderPoint: 5,
+          lastUpdated: "2024-12-19T10:30:00Z",
+          source: "netsuite"
+        }
       },
       {
         partNumber: "4090064020",
         description: "CUP - RACE",
         recommendedReplacementInterval: "12 months",
-        lastReplaced: null
+        lastReplaced: null,
+        stockInfo: {
+          quantityOnHand: 3,
+          quantityAvailable: 2,
+          reorderPoint: 2,
+          lastUpdated: "2024-12-19T10:30:00Z",
+          source: "netsuite"
+        }
       }
     ],
     
@@ -163,7 +177,14 @@ export const mockAssets: Asset[] = [
         partNumber: "AC-FILTER-001",
         description: "Air Filter Element",
         recommendedReplacementInterval: "3 months",
-        lastReplaced: "2024-05-15"
+        lastReplaced: "2024-05-15",
+        stockInfo: {
+          quantityOnHand: 15,
+          quantityAvailable: 15,
+          reorderPoint: 8,
+          lastUpdated: "2024-12-19T10:30:00Z",
+          source: "netsuite"
+        }
       }
     ],
     
@@ -241,7 +262,14 @@ export const mockAssets: Asset[] = [
         partNumber: "GF-IMPELLER-001",
         description: "Pump Impeller Assembly",
         recommendedReplacementInterval: "24 months",
-        lastReplaced: null
+        lastReplaced: null,
+        stockInfo: {
+          quantityOnHand: 0,
+          quantityAvailable: 0,
+          reorderPoint: 1,
+          lastUpdated: "2024-12-19T10:30:00Z",
+          source: "netsuite"
+        }
       }
     ],
     documentation: [],
@@ -296,7 +324,14 @@ export const mockAssets: Asset[] = [
         partNumber: "AL-GASKET-001",
         description: "Heat Exchanger Gasket Set",
         recommendedReplacementInterval: "18 months",
-        lastReplaced: "2024-06-20"
+        lastReplaced: "2024-06-20",
+        stockInfo: {
+          quantityOnHand: 1,
+          quantityAvailable: 1,
+          reorderPoint: 2,
+          lastUpdated: "2024-12-19T10:30:00Z",
+          source: "netsuite"
+        }
       }
     ],
     
@@ -378,7 +413,14 @@ export const mockAssets: Asset[] = [
         partNumber: "ABB-BEARING-001",
         description: "Motor Bearing Set",
         recommendedReplacementInterval: "36 months",
-        lastReplaced: null
+        lastReplaced: null,
+        stockInfo: {
+          quantityOnHand: 6,
+          quantityAvailable: 4,
+          reorderPoint: 3,
+          lastUpdated: "2024-12-19T10:30:00Z",
+          source: "netsuite"
+        }
       }
     ],
     documentation: [],

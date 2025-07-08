@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { SearchSuggestion, SearchFilters, ParsedSearch } from '../types/Search';
 import { mockOrders } from '../data/mockData';
+import { hasMaintenanceDue } from '../utils/maintenanceUtils';
 
 const RECENT_SEARCHES_KEY = 'asset-search-recent';
 const MAX_RECENT_SEARCHES = 5;
@@ -187,23 +188,8 @@ export const useAssetSearch = (assets: Asset[]) => {
   }, []);
 
   // Check if asset has maintenance due
-  const hasMaintenanceDue = useCallback((asset: Asset): boolean => {
-    if (asset.wearComponents.length === 0) return false;
-    
-    const today = new Date();
-    
-    return asset.wearComponents.some(component => {
-      if (!component.lastReplaced || !component.recommendedReplacementInterval) return false;
-      
-      const lastReplacedDate = new Date(component.lastReplaced);
-      const intervalMonths = parseInt(component.recommendedReplacementInterval.split(' ')[0]);
-      const nextDueDate = new Date(lastReplacedDate);
-      nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
-      
-      const daysUntilDue = Math.ceil((nextDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      return daysUntilDue <= 30; // Due within 30 days or overdue
-    });
+  const hasAssetMaintenanceDue = useCallback((asset: Asset): boolean => {
+    return hasMaintenanceDue(asset);
   }, []);
 
   // Check if asset has absolutely no parts activity (reverted to original logic)

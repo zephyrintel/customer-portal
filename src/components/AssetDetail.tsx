@@ -29,6 +29,9 @@ import EmptyDocumentationState from './Documentation/EmptyDocumentationState';
 import AssetEditModal from './AssetEdit/AssetEditModal';
 import OrdersSection from './Orders/OrdersSection';
 import BOMTable from './BillOfMaterials/BOMTable';
+import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
+import { formatDate } from '../utils/dateUtils';
+import { refreshStockData } from '../utils/stockUtils';
 
 const AssetDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +44,7 @@ const AssetDetail: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isAssetEditLoading, setIsAssetEditLoading] = useState(false);
   const [asset, setAsset] = useState<Asset | undefined>();
+  const [isRefreshingStock, setIsRefreshingStock] = useState<Set<string>>(new Set());
   
   // Find the asset from mock data
   React.useEffect(() => {
@@ -76,15 +80,6 @@ const AssetDetail: React.FC = () => {
       </div>
     );
   }
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   const getStatusBadge = (status: Asset['currentStatus']) => {
     const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium";
@@ -143,34 +138,7 @@ const AssetDetail: React.FC = () => {
     }
   };
 
-  const getWearComponentsStatus = () => {
-    if (asset.wearComponents.length === 0) return null;
-    
-    let overdueCount = 0;
-    let dueSoonCount = 0;
-    
-    asset.wearComponents.forEach(component => {
-      if (!component.lastReplaced || !component.recommendedReplacementInterval) return;
-      
-      const lastReplacedDate = new Date(component.lastReplaced);
-      const intervalMonths = parseInt(component.recommendedReplacementInterval.split(' ')[0]);
-      const nextDueDate = new Date(lastReplacedDate);
-      nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
-      
-      const today = new Date();
-      const daysUntilDue = Math.ceil((nextDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilDue < 0) {
-        overdueCount++;
-      } else if (daysUntilDue <= 30) {
-        dueSoonCount++;
-      }
-    });
-    
-    return { overdueCount, dueSoonCount };
-  };
-
-  const wearStatus = getWearComponentsStatus();
+  const wearStatus = asset ? getAssetMaintenanceStatus(asset) : null;
 
   const handleEdit = () => {
     setShowEditModal(true);
@@ -263,13 +231,42 @@ const AssetDetail: React.FC = () => {
     console.log('Document deleted:', documentId);
   };
 
+  const handleRefreshStock = async (partNumber: string) => {
+    setIsRefreshingStock(prev => new Set([...prev, partNumber]));
+    
+    try {
+      const stockData = await refreshStockData([partNumber]);
+      
+      // Update the asset with new stock data
+      if (asset) {
+        const updatedAsset = {
+          ...asset,
+          wearComponents: asset.wearComponents.map(component =>
+            component.partNumber === partNumber
+              ? { ...component, stockInfo: stockData[partNumber] }
+              : component
+          )
+        };
+        setAsset(updatedAsset);
+      }
+    } catch (error) {
+      console.error('Failed to refresh stock data:', error);
+    } finally {
+      setIsRefreshingStock(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(partNumber);
+        return newSet;
+      });
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', count: null },
     { 
       id: 'wear-components', 
       label: 'Wear Components', 
       count: asset.wearComponents.length,
-      hasAlert: wearStatus && (wearStatus.overdueCount > 0 || wearStatus.dueSoonCount > 0)
+      hasAlert: wearStatus && wearStatus.hasMaintenanceDue
     },
     { id: 'documentation', label: 'Documentation', count: documents.length },
     { id: 'bom', label: 'Bill of Materials', count: asset.billOfMaterials.length }
@@ -536,7 +533,7 @@ const AssetDetail: React.FC = () => {
           <div className="space-y-6">
             {asset.wearComponents.length > 0 ? (
               <>
-                {wearStatus && (wearStatus.overdueCount > 0 || wearStatus.dueSoonCount > 0) && (
+                {wearStatus && wearStatus.hasMaintenanceDue && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div className="flex items-center">
                       <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />
@@ -554,7 +551,11 @@ const AssetDetail: React.FC = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {asset.wearComponents.map((component, index) => (
-                    <WearComponentCard key={`${component.partNumber}-${index}`} component={component} />
+                    <WearComponentCard 
+                      key={`${component.partNumber}-${index}`} 
+                      component={component}
+                      onRefreshStock={handleRefreshStock}
+                    />
                   ))}
                 </div>
               </>

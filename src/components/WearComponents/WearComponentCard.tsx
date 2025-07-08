@@ -1,38 +1,22 @@
 import React from 'react';
-import { AlertTriangle, Clock, CheckCircle, ShoppingCart } from 'lucide-react';
+import { AlertTriangle, Clock, CheckCircle, Package, RefreshCw } from 'lucide-react';
 import { WearComponent } from '../../types/Asset';
+import { getStockDisplayInfo, formatLastUpdated } from '../../utils/stockUtils';
+import { calculateMaintenanceStatus } from '../../utils/maintenanceUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 interface WearComponentCardProps {
   component: WearComponent;
+  onRefreshStock?: (partNumber: string) => void;
 }
 
-const WearComponentCard: React.FC<WearComponentCardProps> = ({ component }) => {
-  const calculateReplacementStatus = () => {
-    if (!component.lastReplaced || !component.recommendedReplacementInterval) {
-      return { status: 'unknown', daysUntilDue: null, nextDueDate: null };
-    }
-
-    const lastReplacedDate = new Date(component.lastReplaced);
-    const intervalMonths = parseInt(component.recommendedReplacementInterval.split(' ')[0]);
-    const nextDueDate = new Date(lastReplacedDate);
-    nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
-    
-    const today = new Date();
-    const daysUntilDue = Math.ceil((nextDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    let status: 'overdue' | 'due-soon' | 'good' | 'unknown';
-    if (daysUntilDue < 0) {
-      status = 'overdue';
-    } else if (daysUntilDue <= 30) {
-      status = 'due-soon';
-    } else {
-      status = 'good';
-    }
-
-    return { status, daysUntilDue, nextDueDate };
-  };
-
-  const { status, daysUntilDue, nextDueDate } = calculateReplacementStatus();
+const WearComponentCard: React.FC<WearComponentCardProps> = ({ 
+  component, 
+  onRefreshStock 
+}) => {
+  const maintenanceStatus = calculateMaintenanceStatus(component);
+  const stockInfo = getStockDisplayInfo(component);
+  const { status, daysUntilDue, nextDueDate } = maintenanceStatus;
 
   const getStatusIcon = () => {
     switch (status) {
@@ -72,18 +56,15 @@ const WearComponentCard: React.FC<WearComponentCardProps> = ({ component }) => {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatLastReplaced = (dateString: string | null) => {
     if (!dateString) return 'Never replaced';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatDate(dateString);
   };
 
-  const handleRequestQuote = () => {
-    console.log('Request quote for part:', component.partNumber);
-    // TODO: Implement quote request functionality
+  const handleRefreshStock = () => {
+    if (onRefreshStock) {
+      onRefreshStock(component.partNumber);
+    }
   };
 
   return (
@@ -100,14 +81,25 @@ const WearComponentCard: React.FC<WearComponentCardProps> = ({ component }) => {
             </p>
           </div>
         </div>
-        <button
-          onClick={handleRequestQuote}
-          className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-          aria-label={`Request quote for ${component.partNumber}`}
-        >
-          <ShoppingCart className="w-3 h-3" />
-          <span className="hidden sm:inline">Quote</span>
-        </button>
+        
+        {/* Stock Indicator */}
+        <div className="flex items-center space-x-2">
+          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockInfo.colorClass}`}>
+            <Package className={`w-3 h-3 mr-1 ${stockInfo.iconClass}`} />
+            {stockInfo.displayText}
+          </div>
+          
+          {component.stockInfo && onRefreshStock && (
+            <button
+              onClick={handleRefreshStock}
+              className="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded"
+              title="Refresh stock data"
+              aria-label="Refresh stock data"
+            >
+              <RefreshCw className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
       
       <div className="space-y-2">
@@ -124,9 +116,24 @@ const WearComponentCard: React.FC<WearComponentCardProps> = ({ component }) => {
           </div>
           <div>
             <span className="font-medium">Last Replaced:</span>{' '}
-            {formatDate(component.lastReplaced)}
+            {formatLastReplaced(component.lastReplaced)}
           </div>
         </div>
+        
+        {/* Stock Details */}
+        {component.stockInfo && (
+          <div className="text-xs text-gray-500 pt-2 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <span>
+                On Hand: {component.stockInfo.quantityOnHand} | 
+                Available: {component.stockInfo.quantityAvailable}
+              </span>
+              <span className="text-gray-400">
+                {formatLastUpdated(component.stockInfo.lastUpdated)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

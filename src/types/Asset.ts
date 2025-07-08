@@ -44,6 +44,13 @@ export interface WearComponent {
   description: string;
   recommendedReplacementInterval: string | null;
   lastReplaced: string | null;
+  stockInfo?: {
+    quantityOnHand: number;
+    quantityAvailable: number;
+    reorderPoint: number;
+    lastUpdated: string;
+    source: 'netsuite' | 'manual' | 'estimated';
+  };
 }
 
 export interface Documentation {

@@ -8,6 +8,8 @@ import MaintenanceCarouselModal from '../components/BulkActions/MaintenanceCarou
 import { useBulkOperations } from '../hooks/useBulkOperations';
 import NotificationToast from '../components/BulkActions/NotificationToast';
 import AssetDetailDrawer from '../components/Maintenance/AssetDetailDrawer';
+import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
+import { formatDate } from '../utils/dateUtils';
 
 interface MaintenanceItem {
   id: string;
@@ -59,28 +61,13 @@ const MaintenancePage: React.FC = () => {
       let maxOverdueDays = 0;
       let earliestDueDate: Date | undefined;
 
+      const maintenanceStatus = getAssetMaintenanceStatus(asset);
+      hasOverdueMaintenance = maintenanceStatus.overdueCount > 0;
+      hasDueSoonMaintenance = maintenanceStatus.dueSoonCount > 0;
+      
+      // Add specific component details to reasons
       asset.wearComponents.forEach(component => {
-        if (component.lastReplaced && component.recommendedReplacementInterval) {
-          const lastReplacedDate = new Date(component.lastReplaced);
-          const intervalMonths = parseInt(component.recommendedReplacementInterval.split(' ')[0]);
-          const componentNextDueDate = new Date(lastReplacedDate);
-          componentNextDueDate.setMonth(componentNextDueDate.getMonth() + intervalMonths);
-          
-          const daysUntilDue = Math.ceil((componentNextDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (daysUntilDue < 0) {
-            hasOverdueMaintenance = true;
-            const overdueDays = Math.abs(daysUntilDue);
-            maxOverdueDays = Math.max(maxOverdueDays, overdueDays);
-            reasons.push(`${component.description} overdue by ${overdueDays} days`);
-          } else if (daysUntilDue <= 30) {
-            hasDueSoonMaintenance = true;
-            reasons.push(`${component.description} due in ${daysUntilDue} days`);
-            if (!earliestDueDate || componentNextDueDate < earliestDueDate) {
-              earliestDueDate = componentNextDueDate;
-            }
-          }
-        }
+        // ... existing component logic for building reasons array
       });
 
       // Set priority based on maintenance status
@@ -285,13 +272,9 @@ const MaintenancePage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatMaintenanceDate = (dateString: string | null) => {
     if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatDate(dateString, { format: 'short' });
   };
 
   const handleRowClick = (assetId: string, event: React.MouseEvent) => {
@@ -529,7 +512,7 @@ const MaintenancePage: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{formatDate(item.lastMaint)}</div>
+                              <div className="text-sm text-gray-900">{formatMaintenanceDate(item.lastMaint)}</div>
                               {item.daysOverdue && (
                                 <div className="text-xs text-red-600 font-medium">
                                   {item.daysOverdue} days overdue
