@@ -23,11 +23,11 @@ export default defineConfig({
         drop_console: true,
         drop_debugger: true
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000
   },
   optimizeDeps: {
-    exclude: ['lucide-react'],
-    include: ['react', 'react-dom', 'react-router-dom']
+    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react']
   },
   server: {
     hmr: {
