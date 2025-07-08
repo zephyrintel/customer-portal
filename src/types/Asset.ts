@@ -118,6 +118,14 @@ export interface Asset {
     fluidType: FluidType;
   };
   
+  // Design Conditions (manufacturer specifications)
+  designConditions: {
+    flowRate: string;
+    pressure: string;
+    temperature: string;
+    fluidType: FluidType;
+  };
+  
   // Wear Components (subset of BOM marked by distributor)
   wearComponents: WearComponent[];
   

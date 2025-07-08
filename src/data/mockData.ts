@@ -31,6 +31,14 @@ export const mockAssets: Asset[] = [
       fluidType: "Water"
     },
     
+    // Design Conditions
+    designConditions: {
+      flowRate: "600 GPM",
+      pressure: "175 PSI",
+      temperature: "160°F",
+      fluidType: "Water"
+    },
+    
     // Wear Components (designated by distributor from BOM)
     wearComponents: [
       {
@@ -143,6 +151,13 @@ export const mockAssets: Asset[] = [
       fluidType: "Air"
     },
     
+    designConditions: {
+      flowRate: "500 CFM",
+      pressure: "150 PSI",
+      temperature: "100°F",
+      fluidType: "Air"
+    },
+    
     wearComponents: [
       {
         partNumber: "AC-FILTER-001",
@@ -214,6 +229,13 @@ export const mockAssets: Asset[] = [
       fluidType: "Steam"
     },
     
+    designConditions: {
+      flowRate: "300 GPM",
+      pressure: "400 PSI",
+      temperature: "200°F",
+      fluidType: "Steam"
+    },
+    
     wearComponents: [
       {
         partNumber: "GF-IMPELLER-001",
@@ -259,6 +281,13 @@ export const mockAssets: Asset[] = [
       flowRate: "800 GPM",
       pressure: "200 PSI",
       temperature: "250°F",
+      fluidType: "Chemical"
+    },
+    
+    designConditions: {
+      flowRate: "850 GPM",
+      pressure: "225 PSI",
+      temperature: "275°F",
       fluidType: "Chemical"
     },
     
@@ -337,6 +366,13 @@ export const mockAssets: Asset[] = [
       fluidType: "Air"
     },
     
+    designConditions: {
+      flowRate: "N/A",
+      pressure: "N/A",
+      temperature: "104°F",
+      fluidType: "Air"
+    },
+    
     wearComponents: [
       {
         partNumber: "ABB-BEARING-001",
@@ -388,6 +424,13 @@ export const mockAssets: Asset[] = [
       flowRate: "320 GPM",
       pressure: "180 PSI",
       temperature: "120°F",
+      fluidType: "Oil"
+    },
+    
+    designConditions: {
+      flowRate: "350 GPM",
+      pressure: "200 PSI",
+      temperature: "140°F",
       fluidType: "Oil"
     },
     
@@ -459,6 +502,13 @@ export const mockAssets: Asset[] = [
       fluidType: "Oil"
     },
     
+    designConditions: {
+      flowRate: "350 GPM",
+      pressure: "200 PSI",
+      temperature: "140°F",
+      fluidType: "Oil"
+    },
+    
     // This asset has wear components but NO parts history
     wearComponents: [
       {
@@ -506,6 +556,13 @@ export const mockAssets: Asset[] = [
       flowRate: "850 CFM",
       pressure: "300 PSI",
       temperature: "95°F",
+      fluidType: "Gas"
+    },
+    
+    designConditions: {
+      flowRate: "900 CFM",
+      pressure: "350 PSI",
+      temperature: "120°F",
       fluidType: "Gas"
     },
     
@@ -571,6 +628,13 @@ export const mockAssets: Asset[] = [
       fluidType: "Chemical"
     },
     
+    designConditions: {
+      flowRate: "75 GPM",
+      pressure: "600 PSI",
+      temperature: "120°F",
+      fluidType: "Chemical"
+    },
+    
     // This asset has wear components but NO parts history
     wearComponents: [
       {
@@ -630,6 +694,13 @@ export const mockAssets: Asset[] = [
       flowRate: "400 GPM",
       pressure: "200 PSI",
       temperature: "160°F",
+      fluidType: "Oil"
+    },
+    
+    designConditions: {
+      flowRate: "450 GPM",
+      pressure: "250 PSI",
+      temperature: "180°F",
       fluidType: "Oil"
     },
     
@@ -698,6 +769,13 @@ export const mockAssets: Asset[] = [
       fluidType: "Chemical"
     },
     
+    designConditions: {
+      flowRate: "10 GPM",
+      pressure: "75 PSI",
+      temperature: "100°F",
+      fluidType: "Chemical"
+    },
+    
     // This asset has wear components but NO parts history
     wearComponents: [
       {
@@ -745,6 +823,13 @@ export const mockAssets: Asset[] = [
       flowRate: "280 GPM",
       pressure: "160 PSI",
       temperature: "110°F",
+      fluidType: "Oil"
+    },
+    
+    designConditions: {
+      flowRate: "320 GPM",
+      pressure: "180 PSI",
+      temperature: "130°F",
       fluidType: "Oil"
     },
     

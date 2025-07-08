@@ -430,14 +430,14 @@ const AssetDetail: React.FC = () => {
 
               {/* Operating Conditions */}
               <div className="bg-white rounded-lg shadow-lg lg:col-span-2">
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="lg:col-span-2">
                   <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <Gauge className="w-5 h-5 mr-2 text-purple-600" />
-                    Operating Conditions
+                    <Gauge className="w-5 h-5 mr-2 text-blue-600" />
+                    Current Operating Conditions
                   </h2>
                 </div>
                 <div className="px-6 py-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600 mb-1">
                         {asset.operatingConditions.flowRate}
@@ -465,6 +465,42 @@ const AssetDetail: React.FC = () => {
                   </div>
                 </div>
               </div>
+                {/* Design Conditions */}
+                <div className="lg:col-span-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Settings className="w-5 h-5 mr-2 text-purple-600" />
+                    Design Conditions
+                    <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                      Manufacturer Specs
+                    </span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-purple-600 mb-1">
+                        {asset.designConditions.flowRate}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">Design Flow Rate</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-purple-600 mb-1">
+                        {asset.designConditions.pressure}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">Design Pressure</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-purple-600 mb-1">
+                        {asset.designConditions.temperature}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">Design Temperature</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-purple-600 mb-1">
+                        {asset.designConditions.fluidType}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">Design Fluid</div>
+                    </div>
+                  </div>
+                </div>
 
               {/* Notes Section */}
               {asset.notes && asset.notes.length > 0 && (

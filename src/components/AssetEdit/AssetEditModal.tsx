@@ -218,7 +218,12 @@ const AssetEditModal: React.FC<AssetEditModalProps> = ({
 
               {/* Operating Conditions */}
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Operating Conditions</h4>
+                <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                  <span>Current Operating Conditions</span>
+                  <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                    Current
+                  </span>
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="flowRate" className="block text-sm font-medium text-gray-700 mb-1">
