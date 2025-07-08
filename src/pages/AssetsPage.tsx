@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AssetsTable from '../components/AssetsTable';
 import SearchBar from '../components/Search/SearchBar';
