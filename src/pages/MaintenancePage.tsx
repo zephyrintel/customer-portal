@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X } from 'lucide-react';
-import { mockAssets } from '../data/mockData';
+import { getMockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
 import { useAssetSelection } from '../hooks/useAssetSelection';
 import MaintenanceBulkActionBar from '../components/BulkActions/MaintenanceBulkActionBar';
@@ -38,11 +38,14 @@ const MaintenancePage: React.FC = () => {
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Memoize assets to prevent unnecessary recalculations
+  const assets = useMemo(() => getMockAssets(), []);
+
   // Generate prioritized maintenance list from assets
   const maintenanceItems = useMemo((): MaintenanceItem[] => {
     const items: MaintenanceItem[] = [];
 
-    mockAssets.forEach(asset => {
+    assets.forEach(asset => {
       const reasons: string[] = [];
       let priority: MaintenanceItem['priority'] = 'low';
       let daysOverdue: number | undefined;
@@ -112,7 +115,7 @@ const MaintenancePage: React.FC = () => {
     });
 
     return items;
-  }, []);
+  }, [assets]);
 
   // Filter and sort maintenance items
   const filteredAndSortedItems = useMemo(() => {

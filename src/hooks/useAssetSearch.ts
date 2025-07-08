@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { SearchSuggestion, SearchFilters, ParsedSearch } from '../types/Search';
-import { mockOrders } from '../data/mockData';
+import { getMockOrders } from '../data/mockData';
 import { hasMaintenanceDue } from '../utils/maintenanceUtils';
 
 const RECENT_SEARCHES_KEY = 'asset-search-recent';
@@ -194,6 +194,7 @@ export const useAssetSearch = (assets: Asset[]) => {
 
   // Check if asset has absolutely no parts activity (reverted to original logic)
   const hasNoPartsActivity = useCallback((asset: Asset): boolean => {
+    const mockOrders = getMockOrders();
     // Must have wear components to be considered for parts activity
     const hasWearComponents = asset.wearComponents.length > 0;
     if (!hasWearComponents) return false;
@@ -275,7 +276,7 @@ export const useAssetSearch = (assets: Asset[]) => {
 
       return true;
     });
-  }, [assets, debouncedSearchTerm, filterParam, parseSearchTerm, hasMaintenanceDue, hasNoPartsActivity]);
+  }, [assets, debouncedSearchTerm, filterParam, parseSearchTerm, hasNoPartsActivity]);
 
   // Generate search suggestions
   const suggestions = useMemo((): SearchSuggestion[] => {

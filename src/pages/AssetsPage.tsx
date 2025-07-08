@@ -13,7 +13,7 @@ import { useAssetSearch } from '../hooks/useAssetSearch';
 import { useAssetSelection } from '../hooks/useAssetSelection';
 import { useBulkOperations } from '../hooks/useBulkOperations';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { mockAssets } from '../data/mockData';
+import { getMockAssets } from '../data/mockData';
 import { CheckSquare, Square, Keyboard } from 'lucide-react';
 import { useDeviceType, usePullToRefresh } from '../hooks/useTouch';
 
@@ -24,6 +24,9 @@ const AssetsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const searchBarRef = useRef<HTMLInputElement>(null);
   const deviceType = useDeviceType();
+
+  // Memoize assets to prevent unnecessary recalculations
+  const assets = useMemo(() => getMockAssets(), []);
 
   const {
     searchTerm,
@@ -36,7 +39,7 @@ const AssetsPage: React.FC = () => {
     totalCount,
     hasActiveSearch,
     getSuggestedBulkActions
-  } = useAssetSearch(mockAssets);
+  } = useAssetSearch(assets);
 
   const {
     selectedIds,
@@ -181,7 +184,7 @@ const AssetsPage: React.FC = () => {
   }
 
   // Show empty state for no assets
-  if (mockAssets.length === 0) {
+  if (assets.length === 0) {
     return (
       <div className="min-h-screen bg-gray-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

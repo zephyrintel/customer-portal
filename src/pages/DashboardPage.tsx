@@ -13,15 +13,19 @@ import PartsEngagementCard from '../components/Dashboard/PartsEngagementCard';
 import EmptyStateCard from '../components/Dashboard/EmptyStateCard';
 import OnboardingCard from '../components/Dashboard/OnboardingCard';
 import RecentActivityCard from '../components/Dashboard/RecentActivityCard';
-import { mockAssets, mockOrders } from '../data/mockData';
+import { getMockAssets, getMockOrders } from '../data/mockData';
 import { calculateDashboardMetrics } from '../utils/dashboardMetrics';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  // Calculate dashboard metrics using utility function
-  const metrics = calculateDashboardMetrics(mockAssets, mockOrders);
+  // Calculate dashboard metrics using utility function with memoization
+  const metrics = useMemo(() => {
+    const assets = getMockAssets();
+    const orders = getMockOrders();
+    return calculateDashboardMetrics(assets, orders);
+  }, []);
 
   // Mock recent activities - in production, this would come from an API
   const recentActivities = [

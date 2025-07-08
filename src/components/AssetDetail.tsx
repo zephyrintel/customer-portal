@@ -19,7 +19,7 @@ import {
   Plus,
   X
 } from 'lucide-react';
-import { mockAssets } from '../data/mockData';
+import { getMockAssets } from '../data/mockData';
 import { Asset, Documentation, DocumentType } from '../types/Asset';
 import WearComponentCard from './WearComponents/WearComponentCard';
 import DocumentItem from './Documentation/DocumentItem';
@@ -48,7 +48,7 @@ const AssetDetail: React.FC = () => {
   
   // Find the asset from mock data
   React.useEffect(() => {
-    const foundAsset = mockAssets.find(a => a.id === id);
+    const foundAsset = getMockAssets().find(a => a.id === id);
     setAsset(foundAsset);
   }, [id]);
 

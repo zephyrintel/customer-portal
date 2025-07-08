@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, MapPin, Gauge, Calendar, User, Hash, AlertCircle, Settings, Wrench, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
-import { mockAssets } from '../../data/mockData';
+import { getMockAssets } from '../../data/mockData';
 import { Asset } from '../../types/Asset';
 import WearComponentCard from '../WearComponents/WearComponentCard';
 import DocumentItem from '../Documentation/DocumentItem';
@@ -25,7 +25,7 @@ const AssetDetailDrawer: React.FC<AssetDetailDrawerProps> = ({
   // Find the asset from mock data
   useEffect(() => {
     if (assetId) {
-      const foundAsset = mockAssets.find(a => a.id === assetId);
+      const foundAsset = getMockAssets().find(a => a.id === assetId);
       setAsset(foundAsset || null);
     } else {
       setAsset(null);

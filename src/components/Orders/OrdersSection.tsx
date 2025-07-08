@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ShoppingCart, Package, Calendar, DollarSign, Truck, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react';
-import { mockOrders } from '../../data/mockData';
+import { getMockOrders } from '../../data/mockData';
 import { Order } from '../../types/Asset';
 import ManualOrderModal from './ManualOrderModal';
 
@@ -18,7 +18,7 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ assetId }) => {
 
   // Filter orders for this specific asset
   useEffect(() => {
-    const assetOrders = mockOrders.filter(order => order.assetId === assetId);
+    const assetOrders = getMockOrders().filter(order => order.assetId === assetId);
     setOrders(assetOrders);
   }, [assetId]);
 

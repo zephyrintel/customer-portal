@@ -1,6 +1,7 @@
 import { Asset, Order } from '../types/Asset';
 
-export const mockAssets: Asset[] = [
+// Lazy load mock data to prevent blocking initial bundle
+const createMockAssets = (): Asset[] => [
   {
     id: "AST-001",
     serialNumber: "04930985-1",
@@ -900,8 +901,26 @@ export const mockAssets: Asset[] = [
   }
 ];
 
-// Mock orders data linked to specific assets
-export const mockOrders: Order[] = [
+// Export as a function to enable lazy loading
+export const getMockAssets = (): Asset[] => {
+  // Use a simple cache to avoid recreating the array
+  if (typeof window !== 'undefined' && (window as any).__mockAssetsCache) {
+    return (window as any).__mockAssetsCache;
+  }
+  
+  const assets = createMockAssets();
+  
+  if (typeof window !== 'undefined') {
+    (window as any).__mockAssetsCache = assets;
+  }
+  
+  return assets;
+};
+
+// Keep the original export for backward compatibility but make it lazy
+export const mockAssets = getMockAssets();
+
+const createMockOrders = (): Order[] => [
   {
     id: 'ORD-001',
     orderNumber: 'PO-2024-1234',
@@ -1021,3 +1040,19 @@ export const mockOrders: Order[] = [
     hasApiIntegration: true
   }
 ];
+
+export const getMockOrders = (): Order[] => {
+  if (typeof window !== 'undefined' && (window as any).__mockOrdersCache) {
+    return (window as any).__mockOrdersCache;
+  }
+  
+  const orders = createMockOrders();
+  
+  if (typeof window !== 'undefined') {
+    (window as any).__mockOrdersCache = orders;
+  }
+  
+  return orders;
+};
+
+export const mockOrders = getMockOrders();

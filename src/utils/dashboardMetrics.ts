@@ -13,6 +13,21 @@ export interface DashboardMetrics {
 }
 
 export function calculateDashboardMetrics(assets: Asset[], orders: Order[]): DashboardMetrics {
+  // Early return for empty data to prevent unnecessary calculations
+  if (assets.length === 0) {
+    return {
+      totalEquipment: 0,
+      assetsWithMaintenance: 0,
+      assetsNotOperating: 0,
+      assetsWithNoPartsActivity: 0,
+      openOrders: 0,
+      totalDocuments: 0,
+      operatingPercentage: 0,
+      maintenancePercentage: 0,
+      partsEngagementPercentage: 0
+    };
+  }
+
   const totalEquipment = assets.length;
   
   // Calculate maintenance scheduling percentage
