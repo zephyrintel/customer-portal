@@ -223,22 +223,12 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   )}
                 </div>
                 {associatedAsset ? (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Associated Asset:</span>
-                      <p className="text-sm text-gray-900">{associatedAsset.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {associatedAsset.location.facility} - {associatedAsset.location.area}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <div className="mt-2">
                   <p className="text-sm text-gray-900 mt-1">{associatedAsset.name}</p>
                   <p className="text-xs text-gray-500">
                     {associatedAsset.location.facility} - {associatedAsset.location.area}
                   </p>
+                </div>
                 ) : (
                   <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div className="flex items-center space-x-2">
