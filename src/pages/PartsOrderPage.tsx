@@ -19,6 +19,7 @@ import { useDeviceType } from '../hooks/useTouch';
 import OrderDetailModal from '../components/Orders/OrderDetailModal';
 import ManualOrderModal from '../components/Orders/ManualOrderModal';
 import EmptyOrderState from '../components/EmptyStates/EmptyOrderState';
+import NotificationToast from '../components/BulkActions/NotificationToast';
 
 type OrderTab = 'all' | 'pending' | 'completed';
 type OrderFilter = 'all' | 'parts' | 'maintenance' | 'emergency';
@@ -31,6 +32,8 @@ const PartsOrderPage: React.FC = () => {
   const [showManualModal, setShowManualModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>(getMockOrders());
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const deviceType = useDeviceType();
 
   // Filter and search orders
@@ -177,6 +180,43 @@ const PartsOrderPage: React.FC = () => {
       console.error('Failed to add manual order:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAssociateAsset = async (orderId: string, assetId: string) => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the order with new asset association
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, assetId }
+          : order
+      ));
+      
+      const asset = assetId !== 'GENERAL' 
+        ? getMockAssets().find(a => a.id === assetId)
+        : null;
+      
+      const message = asset 
+        ? `Order successfully associated with ${asset.name}`
+        : 'Order association removed';
+      
+      setSuccessMessage(message);
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Failed to associate asset:', error);
+      setErrorMessage('Failed to update asset association');
+      
+      setTimeout(() => {
+        setErrorMessage(null);
+      }, 5000);
     }
   };
 
@@ -486,6 +526,7 @@ const PartsOrderPage: React.FC = () => {
           order={selectedOrder}
           isOpen={!!selectedOrder}
           onClose={() => setSelectedOrder(null)}
+          onAssociateAsset={handleAssociateAsset}
         />
 
         {/* Manual Order Modal */}
@@ -495,6 +536,20 @@ const PartsOrderPage: React.FC = () => {
           onSave={handleAddManualOrder}
           isLoading={isLoading}
           assetId="GENERAL"
+        />
+
+        {/* Success Toast */}
+        <NotificationToast
+          message={successMessage}
+          type="success"
+          onClose={() => setSuccessMessage(null)}
+        />
+        
+        {/* Error Toast */}
+        <NotificationToast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
         />
       </div>
     </div>

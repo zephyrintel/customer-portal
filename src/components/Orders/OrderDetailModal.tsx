@@ -9,22 +9,30 @@ import {
   AlertCircle,
   DollarSign,
   User,
-  MapPin
+  MapPin,
+  Link,
+  Edit3
 } from 'lucide-react';
 import { Order } from '../../types/Asset';
 import { getMockAssets } from '../../data/mockData';
+import AssetAssociationModal from './AssetAssociationModal';
 
 interface OrderDetailModalProps {
   order: Order | null;
   isOpen: boolean;
   onClose: () => void;
+  onAssociateAsset?: (orderId: string, assetId: string) => void;
 }
 
 const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   order,
   isOpen,
-  onClose
+  onClose,
+  onAssociateAsset
 }) => {
+  const [showAssetAssociation, setShowAssetAssociation] = React.useState(false);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+
   if (!isOpen || !order) return null;
 
   const getStatusIcon = (status: Order['status']) => {
@@ -96,7 +104,21 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     ? getMockAssets().find(asset => asset.id === order.assetId)
     : null;
 
+  const handleAssociateAsset = async (assetId: string) => {
+    if (!onAssociateAsset) return;
+    
+    setIsUpdating(true);
+    try {
+      await onAssociateAsset(order.id, assetId);
+      setShowAssetAssociation(false);
+    } catch (error) {
+      console.error('Failed to associate asset:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
   return (
+    <>
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
@@ -183,7 +205,24 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               )}
 
               {/* Associated Asset */}
-              {associatedAsset && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">Associated Equipment:</span>
+                  </div>
+                  {onAssociateAsset && (
+                    <button
+                      onClick={() => setShowAssetAssociation(true)}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                      disabled={isUpdating}
+                    >
+                      <Edit3 className="w-3 h-3 mr-1" />
+                      {associatedAsset ? 'Change' : 'Associate'}
+                    </button>
+                  )}
+                </div>
+                {associatedAsset ? (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4 text-gray-500" />
@@ -196,7 +235,24 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     </div>
                   </div>
                 </div>
-              )}
+                  <p className="text-sm text-gray-900 mt-1">{associatedAsset.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {associatedAsset.location.facility} - {associatedAsset.location.area}
+                  </p>
+                ) : (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 text-yellow-600" />
+                      <p className="text-sm text-yellow-800">
+                        This order is not associated with specific equipment
+                      </p>
+                    </div>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Link it to equipment for better tracking and maintenance history
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Order Items */}
@@ -272,6 +328,19 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         </div>
       </div>
     </div>
+
+      {/* Asset Association Modal */}
+      {showAssetAssociation && (
+        <AssetAssociationModal
+          isOpen={showAssetAssociation}
+          onClose={() => setShowAssetAssociation(false)}
+          onAssociate={handleAssociateAsset}
+          currentAssetId={order.assetId !== 'GENERAL' ? order.assetId : undefined}
+          orderNumber={order.orderNumber}
+          isLoading={isUpdating}
+        />
+      )}
+    </>
   );
 };
 
