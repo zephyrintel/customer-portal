@@ -49,8 +49,8 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [showPartsUsed, setShowPartsUsed] = useState(false);
   const [usedParts, setUsedParts] = useState<MaintenanceEvent['usedParts']>([]);
+  const [requiredParts, setRequiredParts] = useState<string[]>([]);
   const [editForm, setEditForm] = useState({
     date: '',
     title: '',
@@ -63,6 +63,7 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
   React.useEffect(() => {
     if (event) {
       setUsedParts(event.usedParts || []);
+      setRequiredParts(event.requiredParts || []);
       setEditForm({
         date: event.date.toISOString().split('T')[0],
         title: event.title,
@@ -152,6 +153,16 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
     setUsedParts(prev => prev?.filter(p => p.partNumber !== partNumber) || []);
   };
 
+  const handleAddRequiredPart = (partNumber: string) => {
+    if (!requiredParts.includes(partNumber)) {
+      setRequiredParts(prev => [...prev, partNumber]);
+    }
+  };
+
+  const handleRemoveRequiredPart = (partNumber: string) => {
+    setRequiredParts(prev => prev.filter(p => p !== partNumber));
+  };
+
   if (!isOpen || !event) return null;
 
   const maintenanceTypes = {
@@ -235,8 +246,9 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
 
   const canComplete = event.status === 'scheduled' || event.status === 'in-progress';
   const isOverdue = event.status === 'overdue';
-  const canEdit = event.status !== 'completed';
+  const canEdit = event.status !== 'completed' && event.status !== 'cancelled';
   const canCancel = event.status === 'scheduled';
+  const isCompleted = event.status === 'completed';
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -251,7 +263,9 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
       title: editForm.title,
       description: editForm.description,
       priority: editForm.priority as MaintenanceEvent['priority'],
-      estimatedDuration: editForm.estimatedDuration
+      estimatedDuration: editForm.estimatedDuration,
+      requiredParts: requiredParts,
+      usedParts: usedParts
     };
     
     await onUpdate(updatedEvent);
@@ -261,6 +275,8 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
   const handleCancelEdit = () => {
     setIsEditing(false);
     // Reset form to original values
+    setRequiredParts(event.requiredParts || []);
+    setUsedParts(event.usedParts || []);
     setEditForm({
       date: event.date.toISOString().split('T')[0],
       title: event.title,
@@ -446,64 +462,113 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
               )}
 
               {/* Required Parts Section */}
-              {event.requiredParts && event.requiredParts.length > 0 && (
+              {(requiredParts.length > 0 || (canEdit && !isCompleted)) && (
                 <div className="pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-                    <Package className="w-4 h-4 mr-2" />
-                    Required Parts
-                  </h4>
-                  <div className="space-y-2">
-                    {event.requiredParts.map((partNumber) => {
-                      const part = availableParts.find(p => p.partNumber === partNumber);
-                      return (
-                        <div key={partNumber} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                          <div className="flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                      <Package className="w-4 h-4 mr-2" />
+                      Required Parts
+                      {isCompleted && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                          Final
+                        </span>
+                      )}
+                    </h4>
+                    {isEditing && (
+                      <span className="text-xs text-gray-500">
+                        Click parts below to add to required list
+                      </span>
+                    )}
+                  </div>
+                  
+                  {requiredParts.length > 0 ? (
+                    <div className="space-y-2 mb-4">
+                      {requiredParts.map((partNumber) => {
+                        const part = availableParts.find(p => p.partNumber === partNumber);
+                        return (
+                          <div key={partNumber} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-mono text-gray-600">{partNumber}</span>
+                                {part?.isWearItem && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    Wear Item
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-900 mt-1">{part?.description || 'Part description not available'}</p>
+                            </div>
                             <div className="flex items-center space-x-2">
-                              <span className="text-sm font-mono text-gray-600">{partNumber}</span>
-                              {part?.isWearItem && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                  Wear Item
-                                </span>
+                              {!isCompleted && !usedParts?.find(up => up.partNumber === partNumber) && (
+                                <button
+                                  onClick={() => handleAddUsedPart(partNumber)}
+                                  className="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors duration-200"
+                                >
+                                  Add to Used
+                                </button>
+                              )}
+                              {isEditing && (
+                                <button
+                                  onClick={() => handleRemoveRequiredPart(partNumber)}
+                                  className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
                               )}
                             </div>
-                            <p className="text-sm text-gray-900 mt-1">{part?.description || 'Part description not available'}</p>
                           </div>
-                          {event.status !== 'completed' && (
+                        );
+                      })}
+                    </div>
+                  ) : isEditing ? (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800">No required parts selected. Choose from available parts below.</p>
+                    </div>
+                  ) : null}
+
+                  {/* Available Parts for Adding (Edit Mode Only) */}
+                  {isEditing && (
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Available Parts</h5>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {availableParts
+                          .filter(part => !requiredParts.includes(part.partNumber))
+                          .map((part) => (
                             <button
-                              onClick={() => handleAddUsedPart(partNumber)}
-                              className="ml-2 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors duration-200"
+                              key={part.partNumber}
+                              onClick={() => handleAddRequiredPart(part.partNumber)}
+                              className="w-full text-left p-2 hover:bg-gray-50 rounded-md transition-colors duration-200 border border-gray-200"
                             >
-                              Add to Used
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-mono text-gray-600">{part.partNumber}</span>
+                                {part.isWearItem && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    Wear Item
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-900 mt-1">{part.description}</p>
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Parts Used Section */}
-              {(event.status === 'completed' || showPartsUsed || (usedParts && usedParts.length > 0)) && (
+              {(usedParts && usedParts.length > 0) || (!isCompleted && canEdit) ? (
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-gray-900 flex items-center">
                       <Package className="w-4 h-4 mr-2" />
                       Parts Used
-                      {event.status === 'completed' && (
+                      {isCompleted && (
                         <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
                           Final
                         </span>
                       )}
                     </h4>
-                    {event.status !== 'completed' && !showPartsUsed && (
-                      <button
-                        onClick={() => setShowPartsUsed(true)}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        Track Parts Used
-                      </button>
-                    )}
                   </div>
 
                   {(usedParts && usedParts.length > 0) ? (
@@ -522,20 +587,18 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                             <p className="text-sm text-gray-900 mt-1">{part.description}</p>
                           </div>
                           <div className="flex items-center space-x-2">
-                            {event.status !== 'completed' && (
-                              <>
-                                <button
-                                  onClick={() => handleUpdatePartQuantity(part.partNumber, -1)}
-                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </button>
-                              </>
+                            {!isCompleted && (
+                              <button
+                                onClick={() => handleUpdatePartQuantity(part.partNumber, -1)}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
                             )}
                             <span className="text-sm font-medium text-gray-900 min-w-[2rem] text-center">
                               {part.quantityUsed}
                             </span>
-                            {event.status !== 'completed' && (
+                            {!isCompleted && (
                               <>
                                 <button
                                   onClick={() => handleUpdatePartQuantity(part.partNumber, 1)}
@@ -555,33 +618,19 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                         </div>
                       ))}
                     </div>
-                  ) : showPartsUsed && event.status !== 'completed' ? (
+                  ) : !isCompleted && canEdit ? (
                     <div className="text-center py-4">
                       <Package className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 mb-3">No parts used yet</p>
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {availableParts.map((part) => (
-                          <button
-                            key={part.partNumber}
-                            onClick={() => handleAddUsedPart(part.partNumber)}
-                            className="w-full text-left p-2 hover:bg-gray-50 rounded-md transition-colors duration-200 border border-gray-200"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm font-mono text-gray-600">{part.partNumber}</span>
-                              {part.isWearItem && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                  Wear Item
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-900 mt-1">{part.description}</p>
-                          </button>
-                        ))}
-                      </div>
+                      {requiredParts.length > 0 ? (
+                        <p className="text-xs text-gray-400">Use "Add to Used" buttons above to track parts consumption</p>
+                      ) : (
+                        <p className="text-xs text-gray-400">Add required parts first, then track usage</p>
+                      )}
                     </div>
                   ) : null}
                 </div>
-              )}
+              ) : null}
 
               {/* Overdue Warning */}
               {isOverdue && (
