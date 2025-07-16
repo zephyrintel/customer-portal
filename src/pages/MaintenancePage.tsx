@@ -447,6 +447,58 @@ const MaintenancePage: React.FC = () => {
     // Update event status in real implementation
   };
 
+  const handleUpdateEvent = async (updatedEvent: MaintenanceEvent) => {
+    // Simulate updating maintenance event
+    console.log('Updating maintenance event:', updatedEvent);
+    
+    // In a real implementation, this would update the event in the backend
+    // For now, we'll just log the update and close the modal
+    
+    // Add a note to the associated asset about the rescheduling
+    if (updatedEvent.assetId !== 'GENERAL') {
+      const asset = assets.find(a => a.id === updatedEvent.assetId);
+      if (asset) {
+        const note = {
+          id: `note-${Date.now()}`,
+          date: new Date().toISOString(),
+          text: `Maintenance "${updatedEvent.title}" rescheduled to ${updatedEvent.date.toLocaleDateString()}`,
+          type: 'maintenance' as const,
+          source: 'calendar' as const
+        };
+        
+        // In real implementation, this would update the asset in the backend
+        console.log('Adding note to asset:', { assetId: asset.id, note });
+      }
+    }
+    
+    setShowEventModal(false);
+    setSelectedEvent(null);
+  };
+
+  const handleCancelEvent = async (event: MaintenanceEvent) => {
+    // Simulate cancelling maintenance event
+    console.log('Cancelling maintenance event:', event);
+    
+    // Add a note to the associated asset about the cancellation
+    if (event.assetId !== 'GENERAL') {
+      const asset = assets.find(a => a.id === event.assetId);
+      if (asset) {
+        const note = {
+          id: `note-${Date.now()}`,
+          date: new Date().toISOString(),
+          text: `Maintenance "${event.title}" was cancelled`,
+          type: 'maintenance' as const,
+          source: 'calendar' as const
+        };
+        
+        // In real implementation, this would update the asset in the backend
+        console.log('Adding note to asset:', { assetId: asset.id, note });
+      }
+    }
+    
+    setShowEventModal(false);
+    setSelectedEvent(null);
+  };
   const tabs = [
     { id: 'needs-attention', label: 'Needs Attention', count: filteredAndSortedItems.length },
     { id: 'scheduled', label: 'Scheduled', count: mockMaintenanceEvents.filter(e => e.status === 'scheduled').length },
