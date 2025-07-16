@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X, Filter } from 'lucide-react';
 import { getMockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
 import { useAssetSelection } from '../hooks/useAssetSelection';
@@ -10,6 +10,23 @@ import NotificationToast from '../components/BulkActions/NotificationToast';
 import AssetDetailDrawer from '../components/Maintenance/AssetDetailDrawer';
 import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
 import { formatDate } from '../utils/dateUtils';
+import MaintenanceCalendar from '../components/Calendar/MaintenanceCalendar';
+import CalendarEventModal from '../components/Calendar/CalendarEventModal';
+
+// Mock maintenance events for calendar
+interface MaintenanceEvent {
+  id: string;
+  assetId: string;
+  assetName: string;
+  type: 'preventive' | 'corrective' | 'emergency' | 'inspection' | 'calibration';
+  date: Date;
+  title: string;
+  description?: string;
+  technician?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'scheduled' | 'in-progress' | 'completed' | 'overdue';
+  estimatedDuration: number;
+}
 
 interface MaintenanceItem {
   id: string;
@@ -37,9 +54,95 @@ const MaintenancePage: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<MaintenanceEvent | null>(null);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [assetFilter, setAssetFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
 
   // Memoize assets to prevent unnecessary recalculations
   const assets = useMemo(() => getMockAssets(), []);
+
+  // Mock maintenance events for calendar
+  const mockMaintenanceEvents: MaintenanceEvent[] = useMemo(() => [
+    {
+      id: 'maint-001',
+      assetId: 'AST-001',
+      assetName: 'Centrifugal Pump Model X',
+      type: 'preventive',
+      date: new Date(2024, 11, 25, 9, 0), // December 25, 2024, 9:00 AM
+      title: 'Quarterly Preventive Maintenance',
+      description: 'Replace filters, check seals, and lubricate bearings',
+      technician: 'John Smith',
+      priority: 'medium',
+      status: 'scheduled',
+      estimatedDuration: 3
+    },
+    {
+      id: 'maint-002',
+      assetId: 'AST-002',
+      assetName: 'Rotary Screw Compressor',
+      type: 'corrective',
+      date: new Date(2024, 11, 28, 14, 0), // December 28, 2024, 2:00 PM
+      title: 'Air Filter Replacement',
+      description: 'Replace clogged air filter element',
+      technician: 'Sarah Johnson',
+      priority: 'high',
+      status: 'scheduled',
+      estimatedDuration: 1
+    },
+    {
+      id: 'maint-003',
+      assetId: 'AST-004',
+      assetName: 'Shell & Tube Heat Exchanger',
+      type: 'inspection',
+      date: new Date(2024, 11, 30, 10, 30), // December 30, 2024, 10:30 AM
+      title: 'Annual Safety Inspection',
+      description: 'Pressure test and safety system verification',
+      technician: 'Mike Wilson',
+      priority: 'critical',
+      status: 'scheduled',
+      estimatedDuration: 4
+    },
+    {
+      id: 'maint-004',
+      assetId: 'AST-001',
+      assetName: 'Centrifugal Pump Model X',
+      type: 'emergency',
+      date: new Date(2024, 11, 20, 8, 0), // December 20, 2024, 8:00 AM
+      title: 'Emergency Seal Repair',
+      description: 'Replace failed mechanical seal',
+      technician: 'Emergency Team',
+      priority: 'critical',
+      status: 'completed',
+      estimatedDuration: 2
+    },
+    {
+      id: 'maint-005',
+      assetId: 'AST-005',
+      assetName: 'Electric Motor Drive',
+      type: 'calibration',
+      date: new Date(2025, 0, 5, 13, 0), // January 5, 2025, 1:00 PM
+      title: 'Motor Calibration',
+      description: 'Calibrate motor control parameters',
+      technician: 'Specialist Team',
+      priority: 'medium',
+      status: 'scheduled',
+      estimatedDuration: 2
+    },
+    {
+      id: 'maint-006',
+      assetId: 'AST-002',
+      assetName: 'Rotary Screw Compressor',
+      type: 'preventive',
+      date: new Date(2024, 11, 15, 11, 0), // December 15, 2024, 11:00 AM (overdue)
+      title: 'Overdue Oil Change',
+      description: 'Change compressor oil and filter',
+      technician: 'John Smith',
+      priority: 'high',
+      status: 'overdue',
+      estimatedDuration: 1.5
+    }
+  ], []);
 
   // Generate prioritized maintenance list from assets
   const maintenanceItems = useMemo((): MaintenanceItem[] => {
@@ -323,9 +426,30 @@ const MaintenancePage: React.FC = () => {
     }, 5000);
   };
 
+  // Calendar event handlers
+  const handleEventClick = (event: MaintenanceEvent) => {
+    setSelectedEvent(event);
+    setShowEventModal(true);
+  };
+
+  const handleDateClick = (date: Date) => {
+    console.log('Date clicked:', date);
+  };
+
+  const handleScheduleNew = (date: Date) => {
+    console.log('Schedule new maintenance for:', date);
+    // This would open the maintenance scheduling modal with the selected date
+  };
+
+  const handleCompleteEvent = async (event: MaintenanceEvent) => {
+    // Simulate completing maintenance
+    console.log('Completing maintenance:', event);
+    // Update event status in real implementation
+  };
+
   const tabs = [
     { id: 'needs-attention', label: 'Needs Attention', count: filteredAndSortedItems.length },
-    { id: 'scheduled', label: 'Scheduled', count: 0 },
+    { id: 'scheduled', label: 'Scheduled', count: mockMaintenanceEvents.filter(e => e.status === 'scheduled').length },
     { id: 'history', label: 'History', count: 0 }
   ];
 
@@ -546,9 +670,47 @@ const MaintenancePage: React.FC = () => {
           {/* Placeholder for other tabs */}
           {activeTab === 'scheduled' && (
             <div className="p-6 text-center py-12">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Scheduled Maintenance</h3>
-              <p className="text-gray-500">View and manage scheduled maintenance tasks.</p>
+              {/* Filters for Calendar */}
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <select
+                      value={assetFilter}
+                      onChange={(e) => setAssetFilter(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">All Assets</option>
+                      {assets.map(asset => (
+                        <option key={asset.id} value={asset.id}>{asset.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All Types</option>
+                    <option value="preventive">Preventive</option>
+                    <option value="corrective">Corrective</option>
+                    <option value="emergency">Emergency</option>
+                    <option value="inspection">Inspection</option>
+                    <option value="calibration">Calibration</option>
+                  </select>
+                </div>
+              </div>
+
+              <MaintenanceCalendar
+                events={mockMaintenanceEvents}
+                assets={assets}
+                onEventClick={handleEventClick}
+                onDateClick={handleDateClick}
+                onScheduleNew={handleScheduleNew}
+                selectedAssetFilter={assetFilter}
+                selectedTypeFilter={typeFilter}
+              />
             </div>
           )}
 
@@ -598,6 +760,15 @@ const MaintenancePage: React.FC = () => {
           message={operationState.error}
           type="error"
           onClose={clearOperationState}
+        />
+
+        {/* Calendar Event Modal */}
+        <CalendarEventModal
+          isOpen={showEventModal}
+          onClose={() => setShowEventModal(false)}
+          event={selectedEvent}
+          asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
+          onComplete={handleCompleteEvent}
         />
       </div>
     </div>
