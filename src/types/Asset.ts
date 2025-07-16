@@ -145,7 +145,10 @@ export interface Asset {
   // Additional
   imageUrl: string | null;
   notes: Array<{
+    id?: string;
     date: string;
     text: string;
+    type?: 'maintenance' | 'general' | 'system';
+    source?: 'user' | 'system' | 'calendar';
   }>;
 }

@@ -503,16 +503,33 @@ const AssetDetail: React.FC = () => {
               {asset.notes && asset.notes.length > 0 && (
                 <div className="bg-white rounded-lg shadow-lg lg:col-span-2">
                   <div className="px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Maintenance Notes</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-semibold text-gray-900">Maintenance History</h2>
+                      <span className="text-sm text-gray-500">{asset.notes.length} entries</span>
+                    </div>
                   </div>
                   <div className="px-6 py-4">
-                    <div className="space-y-4">
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
                       {asset.notes.map((note, index) => (
-                        <div key={index} className="flex items-start p-4 bg-gray-50 rounded-lg">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                        <div key={note.id || index} className="flex items-start p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                          <div className={`w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0 ${
+                            note.type === 'maintenance' ? 'bg-green-500' : 
+                            note.type === 'system' ? 'bg-blue-500' : 'bg-gray-500'
+                          }`}></div>
                           <div className="flex-1">
-                            <div className="text-xs text-gray-500 mb-1">
-                              {formatDate(note.date)}
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="text-xs text-gray-500">
+                                {formatDate(note.date, { includeTime: true })}
+                              </div>
+                              {note.source && (
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  note.source === 'calendar' ? 'bg-purple-100 text-purple-700' :
+                                  note.source === 'system' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {note.source}
+                                </span>
+                              )}
                             </div>
                             <div className="text-sm text-gray-700">{note.text}</div>
                           </div>

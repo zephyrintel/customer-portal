@@ -769,6 +769,8 @@ const MaintenancePage: React.FC = () => {
           event={selectedEvent}
           asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
           onComplete={handleCompleteEvent}
+          onUpdate={handleUpdateEvent}
+          onCancel={handleCancelEvent}
         />
       </div>
     </div>
