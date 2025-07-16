@@ -245,7 +245,7 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
     }
   };
 
-  const canComplete = event.status === 'scheduled' || event.status === 'in-progress';
+  const canComplete = event.status === 'scheduled' || event.status === 'in-progress' || event.status === 'overdue';
   const isOverdue = event.status === 'overdue';
   const canEdit = event.status !== 'completed' && event.status !== 'cancelled';
   const canCancel = event.status === 'scheduled';
