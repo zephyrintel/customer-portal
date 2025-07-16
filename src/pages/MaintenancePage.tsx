@@ -75,7 +75,8 @@ const MaintenancePage: React.FC = () => {
       technician: 'John Smith',
       priority: 'medium',
       status: 'scheduled',
-      estimatedDuration: 3
+      estimatedDuration: 3,
+      requiredParts: ['55916', '4090064020']
     },
     {
       id: 'maint-002',
@@ -88,7 +89,8 @@ const MaintenancePage: React.FC = () => {
       technician: 'Sarah Johnson',
       priority: 'high',
       status: 'scheduled',
-      estimatedDuration: 1
+      estimatedDuration: 1,
+      requiredParts: ['AC-FILTER-001']
     },
     {
       id: 'maint-003',
@@ -101,7 +103,8 @@ const MaintenancePage: React.FC = () => {
       technician: 'Mike Wilson',
       priority: 'critical',
       status: 'scheduled',
-      estimatedDuration: 4
+      estimatedDuration: 4,
+      requiredParts: ['AL-GASKET-001']
     },
     {
       id: 'maint-004',
@@ -114,7 +117,16 @@ const MaintenancePage: React.FC = () => {
       technician: 'Emergency Team',
       priority: 'critical',
       status: 'completed',
-      estimatedDuration: 2
+      estimatedDuration: 2,
+      requiredParts: ['55916'],
+      usedParts: [
+        {
+          partNumber: '55916',
+          description: 'SHIM FASTENAL NUMBER 7041808',
+          quantityUsed: 2,
+          isWearItem: true
+        }
+      ]
     },
     {
       id: 'maint-005',
@@ -127,7 +139,8 @@ const MaintenancePage: React.FC = () => {
       technician: 'Specialist Team',
       priority: 'medium',
       status: 'scheduled',
-      estimatedDuration: 2
+      estimatedDuration: 2,
+      requiredParts: ['ABB-BEARING-001']
     },
     {
       id: 'maint-006',
@@ -140,7 +153,8 @@ const MaintenancePage: React.FC = () => {
       technician: 'John Smith',
       priority: 'high',
       status: 'overdue',
-      estimatedDuration: 1.5
+      estimatedDuration: 1.5,
+      requiredParts: ['AC-FILTER-001']
     }
   ], []);
 
@@ -444,7 +458,26 @@ const MaintenancePage: React.FC = () => {
   const handleCompleteEvent = async (event: MaintenanceEvent) => {
     // Simulate completing maintenance
     console.log('Completing maintenance:', event);
-    // Update event status in real implementation
+    
+    // Add completion note to asset history
+    if (event.assetId !== 'GENERAL') {
+      const asset = assets.find(a => a.id === event.assetId);
+      if (asset) {
+        const partsUsedText = event.usedParts && event.usedParts.length > 0
+          ? ` Parts used: ${event.usedParts.map(p => `${p.partNumber} (${p.quantityUsed})`).join(', ')}`
+          : '';
+        
+        const note = {
+          id: `note-${Date.now()}`,
+          date: new Date().toISOString(),
+          text: `Maintenance "${event.title}" completed successfully.${partsUsedText}`,
+          type: 'maintenance' as const,
+          source: 'calendar' as const
+        };
+        
+        console.log('Adding completion note to asset:', { assetId: asset.id, note });
+      }
+    }
   };
 
   const handleUpdateEvent = async (updatedEvent: MaintenanceEvent) => {
