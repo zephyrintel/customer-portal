@@ -1,17 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X, Filter } from 'lucide-react';
 import { getMockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
 import { useAssetSelection } from '../hooks/useAssetSelection';
+import { useMaintenanceFiltering } from '../hooks/useMaintenanceFiltering';
+import { useMaintenanceStats } from '../hooks/useMaintenanceStats';
+import { useVirtualList } from '../hooks/useVirtualList';
+import { useDeviceType, usePullToRefresh } from '../hooks/useTouch';
 import MaintenanceBulkActionBar from '../components/BulkActions/MaintenanceBulkActionBar';
 import MaintenanceCarouselModal from '../components/BulkActions/MaintenanceCarouselModal';
 import { useBulkOperations } from '../hooks/useBulkOperations';
 import NotificationToast from '../components/BulkActions/NotificationToast';
 import AssetDetailDrawer from '../components/Maintenance/AssetDetailDrawer';
-import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
-import { formatDate } from '../utils/dateUtils';
-import MaintenanceCalendar from '../components/Calendar/MaintenanceCalendar';
-import CalendarEventModal from '../components/Calendar/CalendarEventModal';
+import MaintenanceCard from '../components/Maintenance/MaintenanceCard';
+import MaintenanceSkeletonLoader from '../components/Maintenance/MaintenanceSkeletonLoader';
+import FloatingActionButton from '../components/Maintenance/FloatingActionButton';
+import BottomSheet from '../components/Maintenance/BottomSheet';
+
+// Lazy load heavy components
+const MaintenanceCalendar = lazy(() => import('../components/Calendar/MaintenanceCalendar'));
+const CalendarEventModal = lazy(() => import('../components/Calendar/CalendarEventModal'));
 
 // Mock maintenance events for calendar
 interface MaintenanceEvent {
@@ -28,27 +36,15 @@ interface MaintenanceEvent {
   estimatedDuration: number;
 }
 
-interface MaintenanceItem {
-  id: string;
-  name: string;
-  status: string;
-  lastMaint: string | null;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  equipmentType: string;
-  location: string;
-  asset: Asset;
-  daysOverdue?: number;
-  nextDueDate?: Date;
-  maintenanceDetails: string; // Internal field for tracking reasons, not displayed
-}
-
 type SortField = 'name' | 'priority' | 'status' | 'lastMaint' | 'equipmentType' | 'location';
 type SortDirection = 'asc' | 'desc';
 
 const MaintenancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'needs-attention' | 'scheduled' | 'history'>('needs-attention');
-  const [priorityFilter, setPriorityFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    priorityFilter: 'all' as 'all' | 'critical' | 'high' | 'medium' | 'low',
+    searchTerm: ''
+  });
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -58,9 +54,43 @@ const MaintenancePage: React.FC = () => {
   const [showEventModal, setShowEventModal] = useState(false);
   const [assetFilter, setAssetFilter] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const deviceType = useDeviceType();
 
   // Memoize assets to prevent unnecessary recalculations
   const assets = useMemo(() => getMockAssets(), []);
+
+  // Use optimized filtering hook
+  const { filteredAndSortedItems } = useMaintenanceFiltering(assets, filters);
+  
+  // Use stats hook for performance metrics
+  const stats = useMaintenanceStats(assets);
+
+  // Debounced search with increased delay for mobile
+  const debouncedSetSearch = useCallback(
+    debounce((term: string) => {
+      setFilters(prev => ({ ...prev, searchTerm: term }));
+    }, deviceType === 'mobile' ? 500 : 300),
+    [deviceType]
+  );
+
+  // Virtual list for mobile performance
+  const virtualList = useVirtualList({
+    items: filteredAndSortedItems,
+    itemHeight: deviceType === 'mobile' ? 180 : 80,
+    containerHeight: deviceType === 'mobile' ? 600 : 800,
+    overscan: 5
+  });
+
+  // Pull to refresh for mobile
+  const handleRefresh = useCallback(async () => {
+    setIsLoading(true);
+    // Simulate data refresh
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsLoading(false);
+  }, []);
+
+  const { touchRef, isRefreshing, showRefreshIndicator } = usePullToRefresh(handleRefresh);
 
   // Mock maintenance events for calendar
   const mockMaintenanceEvents: MaintenanceEvent[] = useMemo(() => [
@@ -158,137 +188,6 @@ const MaintenancePage: React.FC = () => {
     }
   ], []);
 
-  // Generate prioritized maintenance list from assets
-  const maintenanceItems = useMemo((): MaintenanceItem[] => {
-    const items: MaintenanceItem[] = [];
-
-    assets.forEach(asset => {
-      const reasons: string[] = [];
-      let priority: MaintenanceItem['priority'] = 'low';
-      let daysOverdue: number | undefined;
-      let nextDueDate: Date | undefined;
-
-      // Check if asset is not operating
-      if (['Not In Use', 'Not Commissioned', 'Unknown'].includes(asset.currentStatus)) {
-        reasons.push('Asset is offline');
-        priority = asset.criticalityLevel === 'Critical' ? 'critical' : 'high';
-      }
-
-      // Check for overdue maintenance on wear components
-      const today = new Date();
-      let hasOverdueMaintenance = false;
-      let hasDueSoonMaintenance = false;
-      let maxOverdueDays = 0;
-      let earliestDueDate: Date | undefined;
-
-      const maintenanceStatus = getAssetMaintenanceStatus(asset);
-      hasOverdueMaintenance = maintenanceStatus.overdueCount > 0;
-      hasDueSoonMaintenance = maintenanceStatus.dueSoonCount > 0;
-      
-      // Add specific component details to reasons
-      asset.wearComponents.forEach(component => {
-        // ... existing component logic for building reasons array
-      });
-
-      // Set priority based on maintenance status
-      if (hasOverdueMaintenance) {
-        priority = asset.criticalityLevel === 'Critical' ? 'critical' : 'high';
-        daysOverdue = maxOverdueDays;
-      } else if (hasDueSoonMaintenance) {
-        priority = asset.criticalityLevel === 'Critical' ? 'high' : 'medium';
-        nextDueDate = earliestDueDate;
-      }
-
-      // Check for long time since last maintenance
-      if (asset.lastMaintenance) {
-        const lastMaintenanceDate = new Date(asset.lastMaintenance);
-        const daysSinceLastMaintenance = Math.ceil((today.getTime() - lastMaintenanceDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (daysSinceLastMaintenance > 180) { // 6 months
-          reasons.push(`No maintenance for ${Math.floor(daysSinceLastMaintenance / 30)} months`);
-          if (priority === 'low') priority = 'medium';
-        }
-      } else {
-        reasons.push('No maintenance history recorded');
-        if (priority === 'low') priority = 'medium';
-      }
-
-      // Only include assets that need attention
-      if (reasons.length > 0) {
-        items.push({
-          id: asset.id,
-          name: asset.name,
-          status: asset.currentStatus,
-          lastMaint: asset.lastMaintenance,
-          priority,
-          equipmentType: asset.equipmentType,
-          location: `${asset.location.facility} - ${asset.location.area}`,
-          asset,
-          daysOverdue,
-          nextDueDate,
-          maintenanceDetails: reasons.join('; ') // Store internally but don't display
-        });
-      }
-    });
-
-    return items;
-  }, [assets]);
-
-  // Filter and sort maintenance items
-  const filteredAndSortedItems = useMemo(() => {
-    let filtered = maintenanceItems.filter(item => {
-      const matchesPriority = priorityFilter === 'all' || item.priority === priorityFilter;
-      const matchesSearch = searchTerm === '' || 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.equipmentType.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      return matchesPriority && matchesSearch;
-    });
-
-    // Sort the filtered items
-    filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'priority':
-          const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-          aValue = priorityOrder[a.priority];
-          bValue = priorityOrder[b.priority];
-          break;
-        case 'status':
-          aValue = a.status.toLowerCase();
-          bValue = b.status.toLowerCase();
-          break;
-        case 'lastMaint':
-          aValue = a.lastMaint ? new Date(a.lastMaint).getTime() : 0;
-          bValue = b.lastMaint ? new Date(b.lastMaint).getTime() : 0;
-          break;
-        case 'equipmentType':
-          aValue = a.equipmentType.toLowerCase();
-          bValue = b.equipmentType.toLowerCase();
-          break;
-        case 'location':
-          aValue = a.location.toLowerCase();
-          bValue = b.location.toLowerCase();
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [maintenanceItems, priorityFilter, searchTerm, sortField, sortDirection]);
-
   // Convert maintenance items to assets for selection hook
   const assetsForSelection = filteredAndSortedItems.map(item => item.asset);
 
@@ -308,6 +207,18 @@ const MaintenancePage: React.FC = () => {
     operationState,
     clearOperationState
   } = useBulkOperations();
+
+  // Debounce utility
+  function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    delay: number
+  ): (...args: Parameters<T>) => void {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  }
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -417,6 +328,17 @@ const MaintenancePage: React.FC = () => {
       selectAll();
     }
   };
+
+  const handleSearchChange = useCallback((value: string) => {
+    debouncedSetSearch(value);
+  }, [debouncedSetSearch]);
+
+  const handlePriorityFilterChange = useCallback((value: string) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      priorityFilter: value as 'all' | 'critical' | 'high' | 'medium' | 'low' 
+    }));
+  }, []);
 
   // Bulk operation handlers
   const handleScheduleMaintenance = () => {
@@ -533,19 +455,40 @@ const MaintenancePage: React.FC = () => {
     setSelectedEvent(null);
   };
   const tabs = [
-    { id: 'needs-attention', label: 'Needs Attention', count: filteredAndSortedItems.length },
+    { id: 'needs-attention', label: 'Needs Attention', count: stats.assetsNeedingAttention },
     { id: 'scheduled', label: 'Scheduled', count: mockMaintenanceEvents.filter(e => e.status === 'scheduled').length },
     { id: 'history', label: 'History', count: 0 }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div 
+      ref={deviceType === 'mobile' ? touchRef : undefined}
+      className="min-h-screen bg-gray-100 py-4 sm:py-8 relative"
+    >
+      {/* Pull to refresh indicator */}
+      {showRefreshIndicator && deviceType === 'mobile' && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-blue-600 text-white text-center py-2 text-sm">
+          {isRefreshing ? 'Refreshing...' : 'Pull to refresh'}
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Maintenance Scheduler</h1>
-            <p className="text-gray-600">Manage preventive and corrective maintenance for your equipment</p>
+            <h1 className={`font-bold text-gray-900 mb-2 ${
+              deviceType === 'mobile' ? 'text-xl' : 'text-3xl'
+            }`}>
+              {deviceType === 'mobile' ? 'Maintenance' : 'Maintenance Scheduler'}
+            </h1>
+            <p className={`text-gray-600 ${
+              deviceType === 'mobile' ? 'text-sm' : ''
+            }`}>
+              {deviceType === 'mobile' 
+                ? 'Manage equipment maintenance' 
+                : 'Manage preventive and corrective maintenance for your equipment'
+              }
+            </p>
           </div>
         </div>
 
@@ -578,23 +521,28 @@ const MaintenancePage: React.FC = () => {
           {activeTab === 'needs-attention' && (
             <div className="p-6">
               {/* Filters and Search */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 mb-6">
+              <div className={`flex flex-col space-y-4 mb-6 ${
+                deviceType !== 'mobile' ? 'sm:flex-row sm:items-center sm:justify-between sm:space-y-0' : ''
+              }`}>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="text"
                       placeholder="Search equipment..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className={`pl-10 pr-4 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        deviceType === 'mobile' ? 'py-3 min-h-[44px] w-full' : 'py-2'
+                      }`}
                     />
                   </div>
                   
                   <select
-                    value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value as any)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={filters.priorityFilter}
+                    onChange={(e) => handlePriorityFilterChange(e.target.value)}
+                    className={`border border-gray-300 rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      deviceType === 'mobile' ? 'py-3 min-h-[44px]' : 'py-2'
+                    }`}
                   >
                     <option value="all">All Priorities</option>
                     <option value="critical">Critical</option>
@@ -604,8 +552,8 @@ const MaintenancePage: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="text-sm text-gray-600">
-                  Showing {filteredAndSortedItems.length} of {maintenanceItems.length} items
+                <div className={`text-gray-600 ${deviceType === 'mobile' ? 'text-sm text-center' : 'text-sm'}`}>
+                  Showing {filteredAndSortedItems.length} of {stats.assetsNeedingAttention} items
                   {selectedCount > 0 && (
                     <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
                       {selectedCount} selected
@@ -615,134 +563,106 @@ const MaintenancePage: React.FC = () => {
               </div>
 
               {/* Maintenance Items Table */}
-              {filteredAndSortedItems.length > 0 ? (
-                <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden transition-all duration-300 ${hasSelection ? 'mb-20' : 'mb-0'}`}>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left">
-                            <input
-                              type="checkbox"
-                              checked={isAllSelected}
-                              ref={(input) => {
-                                if (input) input.indeterminate = isIndeterminate;
-                              }}
-                              onChange={handleSelectAllChange}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              aria-label="Select all assets"
-                            />
-                          </th>
-                          <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
-                            onClick={() => handleSort('name')}
-                          >
-                            <div className="flex items-center space-x-1">
-                              <span>Equipment</span>
-                              {getSortIcon('name')}
-                            </div>
-                          </th>
-                          <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
-                            onClick={() => handleSort('location')}
-                          >
-                            <div className="flex items-center space-x-1">
-                              <span>Location</span>
-                              {getSortIcon('location')}
-                            </div>
-                          </th>
-                          <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
-                            onClick={() => handleSort('priority')}
-                          >
-                            <div className="flex items-center space-x-1">
-                              <span>Priority</span>
-                              {getSortIcon('priority')}
-                            </div>
-                          </th>
-                          <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
-                            onClick={() => handleSort('status')}
-                          >
-                            <div className="flex items-center space-x-1">
-                              <span>Status</span>
-                              {getSortIcon('status')}
-                            </div>
-                          </th>
-                          <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-150"
-                            onClick={() => handleSort('lastMaint')}
-                          >
-                            <div className="flex items-center space-x-1">
-                              <span>Last Maintenance</span>
-                              {getSortIcon('lastMaint')}
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredAndSortedItems.map((item) => (
-                          <tr 
-                            key={item.id} 
-                            onClick={(e) => handleRowClick(item.id, e)}
-                            className={`transition-colors duration-150 ease-in-out cursor-pointer ${
-                              selectedIds.has(item.id) 
-                                ? 'bg-blue-50 border-blue-200' 
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input
-                                type="checkbox"
-                                checked={selectedIds.has(item.id)}
-                                onChange={(e) => handleCheckboxClick(item.id, e as any)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                aria-label={`Select ${item.name}`}
+              {isLoading ? (
+                <MaintenanceSkeletonLoader rows={8} />
+              ) : filteredAndSortedItems.length > 0 ? (
+                <>
+                  {deviceType === 'mobile' ? (
+                    // Mobile: Virtual scrolling card view
+                    <div className={`transition-all duration-300 ${hasSelection ? 'mb-32' : 'mb-0'}`}>
+                      {filteredAndSortedItems.length > 50 ? (
+                        <div 
+                          className="relative"
+                          style={{ height: virtualList.totalHeight }}
+                          onScroll={virtualList.handleScroll}
+                        >
+                          <div style={{ transform: `translateY(${virtualList.offsetY}px)` }}>
+                            {virtualList.visibleItems.map(({ item, index }) => (
+                              <MaintenanceCard
+                                key={item.id}
+                                item={item}
+                                isSelected={selectedIds.has(item.id)}
+                                onToggleSelection={handleCheckboxClick}
+                                onRowClick={handleRowClick}
+                                showSelection={true}
                               />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <span className="text-lg mr-3">{getEquipmentTypeIcon(item.equipmentType)}</span>
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                  <div className="text-sm text-gray-500">{item.equipmentType}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{item.location}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
-                                {getPriorityIcon(item.priority)}
-                                <span className="ml-1 capitalize">{item.priority}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={getStatusBadge(item.status as Asset['currentStatus'])}>
-                                {item.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{formatMaintenanceDate(item.lastMaint)}</div>
-                              {item.daysOverdue && (
-                                <div className="text-xs text-red-600 font-medium">
-                                  {item.daysOverdue} days overdue
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {filteredAndSortedItems.map((item) => (
+                            <MaintenanceCard
+                              key={item.id}
+                              item={item}
+                              isSelected={selectedIds.has(item.id)}
+                              onToggleSelection={handleCheckboxClick}
+                              onRowClick={handleRowClick}
+                              showSelection={true}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Desktop: Table view
+                    <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden transition-all duration-300 ${hasSelection ? 'mb-20' : 'mb-0'}`}>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left">
+                                <input
+                                  type="checkbox"
+                                  checked={isAllSelected}
+                                  ref={(input) => {
+                                    if (input) input.indeterminate = isIndeterminate;
+                                  }}
+                                  onChange={handleSelectAllChange}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  aria-label="Select all assets"
+                                />
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Equipment
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Priority
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Last Maintenance
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredAndSortedItems.map((item) => (
+                              <MaintenanceCard
+                                key={item.id}
+                                item={item}
+                                isSelected={selectedIds.has(item.id)}
+                                onToggleSelection={handleCheckboxClick}
+                                onRowClick={handleRowClick}
+                                showSelection={true}
+                              />
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-12">
                   <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h3>
                   <p className="text-gray-500">
-                    {maintenanceItems.length === 0 
+                    {stats.assetsNeedingAttention === 0 
                       ? 'No equipment requires immediate attention.'
                       : 'No equipment matches your current filters.'
                     }
@@ -756,14 +676,18 @@ const MaintenancePage: React.FC = () => {
           {activeTab === 'scheduled' && (
             <div className="p-6 text-center py-12">
               {/* Filters for Calendar */}
-              <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              <div className={`mb-6 flex flex-col space-y-4 ${
+                deviceType !== 'mobile' ? 'sm:flex-row sm:items-center sm:justify-between sm:space-y-0' : ''
+              }`}>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <select
                       value={assetFilter}
                       onChange={(e) => setAssetFilter(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`pl-10 pr-4 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        deviceType === 'mobile' ? 'py-3 min-h-[44px] w-full' : 'py-2'
+                      }`}
                     >
                       <option value="">All Assets</option>
                       {assets.map(asset => (
@@ -775,7 +699,9 @@ const MaintenancePage: React.FC = () => {
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`border border-gray-300 rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      deviceType === 'mobile' ? 'py-3 min-h-[44px] w-full' : 'py-2'
+                    }`}
                   >
                     <option value="">All Types</option>
                     <option value="preventive">Preventive</option>
@@ -787,15 +713,17 @@ const MaintenancePage: React.FC = () => {
                 </div>
               </div>
 
-              <MaintenanceCalendar
-                events={mockMaintenanceEvents}
-                assets={assets}
-                onEventClick={handleEventClick}
-                onDateClick={handleDateClick}
-                onScheduleNew={handleScheduleNew}
-                selectedAssetFilter={assetFilter}
-                selectedTypeFilter={typeFilter}
-              />
+              <Suspense fallback={<MaintenanceSkeletonLoader rows={6} />}>
+                <MaintenanceCalendar
+                  events={mockMaintenanceEvents}
+                  assets={assets}
+                  onEventClick={handleEventClick}
+                  onDateClick={handleDateClick}
+                  onScheduleNew={handleScheduleNew}
+                  selectedAssetFilter={assetFilter}
+                  selectedTypeFilter={typeFilter}
+                />
+              </Suspense>
             </div>
           )}
 
@@ -807,6 +735,14 @@ const MaintenancePage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Floating Action Button for Mobile */}
+        {deviceType === 'mobile' && (
+          <FloatingActionButton
+            onClick={handleScheduleMaintenance}
+            disabled={isLoading}
+          />
+        )}
 
         {/* Maintenance-Specific Bulk Action Bar */}
         <MaintenanceBulkActionBar
@@ -848,15 +784,38 @@ const MaintenancePage: React.FC = () => {
         />
 
         {/* Calendar Event Modal */}
-        <CalendarEventModal
-          isOpen={showEventModal}
-          onClose={() => setShowEventModal(false)}
-          event={selectedEvent}
-          asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
-          onComplete={handleCompleteEvent}
-          onUpdate={handleUpdateEvent}
-          onCancel={handleCancelEvent}
-        />
+        <Suspense fallback={null}>
+          {deviceType === 'mobile' ? (
+            <BottomSheet
+              isOpen={showEventModal}
+              onClose={() => setShowEventModal(false)}
+              title={selectedEvent?.title || 'Maintenance Event'}
+              height="auto"
+            >
+              {selectedEvent && (
+                <CalendarEventModal
+                  isOpen={true}
+                  onClose={() => setShowEventModal(false)}
+                  event={selectedEvent}
+                  asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
+                  onComplete={handleCompleteEvent}
+                  onUpdate={handleUpdateEvent}
+                  onCancel={handleCancelEvent}
+                />
+              )}
+            </BottomSheet>
+          ) : (
+            <CalendarEventModal
+              isOpen={showEventModal}
+              onClose={() => setShowEventModal(false)}
+              event={selectedEvent}
+              asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
+              onComplete={handleCompleteEvent}
+              onUpdate={handleUpdateEvent}
+              onCancel={handleCancelEvent}
+            />
+          )}
+        </Suspense>
       </div>
     </div>
   );

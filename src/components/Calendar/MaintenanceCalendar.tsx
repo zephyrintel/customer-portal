@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Plus, Filter, Eye, ChevronDown } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 import { useDeviceType } from '../../hooks/useTouch';
@@ -27,7 +27,7 @@ interface MaintenanceCalendarProps {
   selectedTypeFilter?: string;
 }
 
-const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
+const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
   events,
   assets,
   onEventClick,
@@ -111,32 +111,32 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
   }, [currentDate]);
 
   // Get events for a specific date
-  const getEventsForDate = (date: Date) => {
+  const getEventsForDate = useCallback((date: Date) => {
     return filteredEvents.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate.toDateString() === date.toDateString();
     });
-  };
+  }, [filteredEvents]);
 
   // Navigation functions
-  const navigateMonth = (direction: 'prev' | 'next') => {
+  const navigateMonth = useCallback((direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
       return newDate;
     });
-  };
+  }, []);
 
-  const goToToday = () => {
+  const goToToday = useCallback(() => {
     setCurrentDate(new Date());
-  };
+  }, []);
 
-  const goToMonth = (year: number, month: number) => {
+  const goToMonth = useCallback((year: number, month: number) => {
     setCurrentDate(new Date(year, month, 1));
     setShowDatePicker(false);
-  };
+  }, []);
 
-  const navigateToDate = (direction: 'prev' | 'next', unit: 'month' | 'year') => {
+  const navigateToDate = useCallback((direction: 'prev' | 'next', unit: 'month' | 'year') => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       if (unit === 'month') {
@@ -146,18 +146,18 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
       }
       return newDate;
     });
-  };
+  }, []);
 
   // Format date for display
-  const formatMonthYear = (date: Date) => {
+  const formatMonthYear = useCallback((date: Date) => {
     return date.toLocaleDateString('en-US', { 
       month: 'long', 
       year: 'numeric' 
     });
-  };
+  }, []);
 
   // Generate month/year options for dropdown
-  const generateDateOptions = () => {
+  const generateDateOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const years = [];
     const months = [
@@ -171,27 +171,25 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
     }
 
     return { years, months };
-  };
+  }, []);
 
-  const { years, months } = generateDateOptions();
-
-  const isToday = (date: Date) => {
+  const isToday = useCallback((date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
-  };
+  }, []);
 
-  const isCurrentMonth = (date: Date) => {
+  const isCurrentMonth = useCallback((date: Date) => {
     return date.getMonth() === currentDate.getMonth();
-  };
+  }, [currentDate]);
 
-  const isPastDate = (date: Date) => {
+  const isPastDate = useCallback((date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date < today;
-  };
+  }, []);
 
   // Handle date click
-  const handleDateClick = (date: Date) => {
+  const handleDateClick = useCallback((date: Date) => {
     onDateClick(date);
     
     // If no events on this date, offer to schedule new maintenance
@@ -199,10 +197,10 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
     if (dayEvents.length === 0 && !isPastDate(date)) {
       onScheduleNew(date);
     }
-  };
+  }, [onDateClick, onScheduleNew, getEventsForDate, isPastDate]);
 
   // Render event in calendar cell
-  const renderEvent = (event: MaintenanceEvent, isCompact = false) => {
+  const renderEvent = useCallback((event: MaintenanceEvent, isCompact = false) => {
     const typeConfig = maintenanceTypes[event.type];
     
     if (isCompact) {
@@ -232,10 +230,10 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
         <div className="text-xs opacity-75 truncate">{event.assetName}</div>
       </div>
     );
-  };
+  }, [onEventClick, maintenanceTypes]);
 
   // Mobile day view
-  const renderMobileDay = (date: Date, dayEvents: MaintenanceEvent[]) => {
+  const renderMobileDay = useCallback((date: Date, dayEvents: MaintenanceEvent[]) => {
     const isCurrentMonthDay = isCurrentMonth(date);
     const isTodayDate = isToday(date);
     const isPast = isPastDate(date);
@@ -265,10 +263,10 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
         </div>
       </div>
     );
-  };
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
 
   // Desktop calendar cell
-  const renderDesktopDay = (date: Date, dayEvents: MaintenanceEvent[]) => {
+  const renderDesktopDay = useCallback((date: Date, dayEvents: MaintenanceEvent[]) => {
     const isCurrentMonthDay = isCurrentMonth(date);
     const isTodayDate = isToday(date);
     const isPast = isPastDate(date);
@@ -302,7 +300,9 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
         </div>
       </div>
     );
-  };
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
+
+  const { years, months } = generateDateOptions;
 
   return (
     <div className="bg-white rounded-lg shadow-lg">
@@ -523,6 +523,8 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = ({
       )}
     </div>
   );
-};
+});
+
+MaintenanceCalendar.displayName = 'MaintenanceCalendar';
 
 export default MaintenanceCalendar;
