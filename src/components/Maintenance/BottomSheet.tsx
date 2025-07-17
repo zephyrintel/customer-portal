@@ -113,5 +113,3 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 };
 
 export default BottomSheet;
-</parameter>
-</invoke>

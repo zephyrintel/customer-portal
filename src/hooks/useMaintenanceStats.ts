@@ -52,5 +52,3 @@ export const useMaintenanceStats = (assets: Asset[]): MaintenanceStats => {
     };
   }, [assets]);
 };
-</parameter>
-</invoke>

@@ -73,5 +73,3 @@ export const useSwipeGestures = (
     onTouchEnd: handleTouchEnd
   };
 };
-</parameter>
-</invoke>

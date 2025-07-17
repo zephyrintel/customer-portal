@@ -113,5 +113,3 @@ const MaintenanceSkeletonLoader: React.FC<MaintenanceSkeletonLoaderProps> = ({
 };
 
 export default MaintenanceSkeletonLoader;
-</parameter>
-</invoke>

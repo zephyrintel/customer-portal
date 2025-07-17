@@ -33,5 +33,3 @@ export const useHapticFeedback = () => {
 
   return { triggerHaptic };
 };
-</parameter>
-</invoke>
