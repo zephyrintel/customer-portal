@@ -209,9 +209,7 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = memo(({
       className={`transition-colors duration-150 ease-in-out cursor-pointer ${
         isSelected 
           ? 'bg-blue-50 border-blue-200' 
-          : 'hover:bg-gray-50'
-      }`}
-    >
+          : 'hover:bg-gray-50'}`}>
       {showSelection && (
         <td className="px-6 py-4 whitespace-nowrap">
           <input
