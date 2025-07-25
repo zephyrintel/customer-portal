@@ -259,5 +259,3 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = memo(({
 MaintenanceCard.displayName = 'MaintenanceCard';
 
 export default MaintenanceCard;
-</parameter>
-</invoke>
