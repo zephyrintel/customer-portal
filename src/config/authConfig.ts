@@ -28,6 +28,7 @@ export const msalConfig: Configuration = {
   system: {
     allowNativeBroker: false, // Disable native broker for web apps
     loggerOptions: {
+    }
     postLogoutRedirectUri: getRedirectUri(),
     navigateToLoginRequestUrl: false,
   },
