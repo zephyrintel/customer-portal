@@ -22,7 +22,7 @@ const BaseCard: React.FC<BaseCardProps> = ({
   iconColor = 'text-blue-600',
   children,
   action,
-  className = ''
+  className = '',
   isLoading = false
 }) => {
   const getButtonVariant = (variant: string = 'primary') => {
