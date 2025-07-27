@@ -19,24 +19,14 @@ export const msalConfig: Configuration = {
     authority: 'https://login.microsoftonline.com/common',
     redirectUri: getRedirectUri(),
     postLogoutRedirectUri: getRedirectUri(),
-    navigateToLoginRequestUrl: false,
+    navigateToLoginRequestUrl: false
   },
   cache: {
-    cacheLocation: 'sessionStorage', // Store tokens in sessionStorage for security
-    storeAuthStateInCookie: false, // Set to true for IE11 or Edge
+    cacheLocation: 'sessionStorage',
+    storeAuthStateInCookie: false
   },
   system: {
-    allowNativeBroker: false, // Disable native broker for web apps
-    loggerOptions: {
-    }
-    postLogoutRedirectUri: getRedirectUri(),
-    navigateToLoginRequestUrl: false,
-  },
-  cache: {
-    cacheLocation: 'sessionStorage', // Store tokens in sessionStorage for security
-    storeAuthStateInCookie: false, // Set to true for IE11 or Edge
-  },
-  system: {
+    allowNativeBroker: false,
     loggerOptions: {
       loggerCallback: (level, message, containsPii) => {
         if (containsPii) {
@@ -57,8 +47,8 @@ export const msalConfig: Configuration = {
             return;
         }
       },
-    },
-  },
+    }
+  }
 };
 
 // Add scopes for login request
