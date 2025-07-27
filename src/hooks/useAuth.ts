@@ -69,11 +69,15 @@ export const useAuth = () => {
     setIsWaitingForAuth(true);
 
     try {
-      // Generate auth URL
-      const authUrl = await instance.getAuthCodeUrl({
-        ...loginRequest,
-        redirectUri: window.location.origin + '/auth-callback'
-      });
+      // Use loginRedirect but in a new window
+      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
+        `client_id=${msalConfig.auth.clientId}&` +
+        `response_type=code&` +
+        `redirect_uri=${encodeURIComponent(window.location.origin + '/auth-callback.html')}&` +
+        `scope=${encodeURIComponent(loginRequest.scopes.join(' '))}&` +
+        `response_mode=query&` +
+        `state=${Date.now()}&` +
+        `prompt=select_account`;
 
       // Clear any existing auth state
       localStorage.removeItem('msal_auth_result');
