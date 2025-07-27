@@ -11,6 +11,7 @@ import {
   BookOpen,
   Bell
 } from 'lucide-react';
+import UserProfile from '../Auth/UserProfile';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -89,8 +90,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <Package className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">AcmePump</h2>
-              <p className="text-xs text-gray-500">Solutions Portal</p>
+              <h2 className="text-sm font-semibold text-gray-900">Zephyr Intelligence</h2>
+              <p className="text-xs text-gray-500">Asset Management</p>
             </div>
           </div>
         )}
@@ -150,6 +151,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           );
         })}
       </nav>
+
+      {/* User Profile Section */}
+      <div className="p-4 border-t border-gray-200">
+        {!isCollapsed ? (
+          <UserProfile />
+        ) : (
+          <div className="flex justify-center">
+            <UserProfile />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
