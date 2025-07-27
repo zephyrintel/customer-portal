@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, Suspense, lazy } from 'react';
-import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X, Filter } from 'lucide-react';
+import { AlertTriangle, Clock, CheckCircle, Wrench, Search, ChevronUp, ChevronDown, X, Filter } from 'lucide-react';
 import { getMockAssets } from '../data/mockData';
 import { Asset } from '../types/Asset';
 import { useAssetSelection } from '../hooks/useAssetSelection';
@@ -17,30 +17,11 @@ import MaintenanceSkeletonLoader from '../components/Maintenance/MaintenanceSkel
 import FloatingActionButton from '../components/Maintenance/FloatingActionButton';
 import BottomSheet from '../components/Maintenance/BottomSheet';
 
-// Lazy load heavy components
-const MaintenanceCalendar = lazy(() => import('../components/Calendar/MaintenanceCalendar'));
-const CalendarEventModal = lazy(() => import('../components/Calendar/CalendarEventModal'));
-
-// Mock maintenance events for calendar
-interface MaintenanceEvent {
-  id: string;
-  assetId: string;
-  assetName: string;
-  type: 'preventive' | 'corrective' | 'emergency' | 'inspection' | 'calibration';
-  date: Date;
-  title: string;
-  description?: string;
-  technician?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'scheduled' | 'in-progress' | 'completed' | 'overdue';
-  estimatedDuration: number;
-}
-
 type SortField = 'name' | 'priority' | 'status' | 'lastMaint' | 'equipmentType' | 'location';
 type SortDirection = 'asc' | 'desc';
 
 const MaintenancePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'needs-attention' | 'scheduled' | 'history'>('needs-attention');
+  const [activeTab, setActiveTab] = useState<'needs-attention' | 'history'>('needs-attention');
   const [filters, setFilters] = useState({
     priorityFilter: 'all' as 'all' | 'critical' | 'high' | 'medium' | 'low',
     searchTerm: ''
@@ -50,10 +31,6 @@ const MaintenancePage: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<MaintenanceEvent | null>(null);
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [assetFilter, setAssetFilter] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const deviceType = useDeviceType();
 
@@ -91,102 +68,6 @@ const MaintenancePage: React.FC = () => {
   }, []);
 
   const { touchRef, isRefreshing, showRefreshIndicator } = usePullToRefresh(handleRefresh);
-
-  // Mock maintenance events for calendar
-  const mockMaintenanceEvents: MaintenanceEvent[] = useMemo(() => [
-    {
-      id: 'maint-001',
-      assetId: 'AST-001',
-      assetName: 'Centrifugal Pump Model X',
-      type: 'preventive',
-      date: new Date(2024, 11, 25, 9, 0), // December 25, 2024, 9:00 AM
-      title: 'Quarterly Preventive Maintenance',
-      description: 'Replace filters, check seals, and lubricate bearings',
-      technician: 'John Smith',
-      priority: 'medium',
-      status: 'scheduled',
-      estimatedDuration: 3,
-      requiredParts: ['55916', '4090064020']
-    },
-    {
-      id: 'maint-002',
-      assetId: 'AST-002',
-      assetName: 'Rotary Screw Compressor',
-      type: 'corrective',
-      date: new Date(2024, 11, 28, 14, 0), // December 28, 2024, 2:00 PM
-      title: 'Air Filter Replacement',
-      description: 'Replace clogged air filter element',
-      technician: 'Sarah Johnson',
-      priority: 'high',
-      status: 'scheduled',
-      estimatedDuration: 1,
-      requiredParts: ['AC-FILTER-001']
-    },
-    {
-      id: 'maint-003',
-      assetId: 'AST-004',
-      assetName: 'Shell & Tube Heat Exchanger',
-      type: 'inspection',
-      date: new Date(2024, 11, 30, 10, 30), // December 30, 2024, 10:30 AM
-      title: 'Annual Safety Inspection',
-      description: 'Pressure test and safety system verification',
-      technician: 'Mike Wilson',
-      priority: 'critical',
-      status: 'scheduled',
-      estimatedDuration: 4,
-      requiredParts: ['AL-GASKET-001']
-    },
-    {
-      id: 'maint-004',
-      assetId: 'AST-001',
-      assetName: 'Centrifugal Pump Model X',
-      type: 'emergency',
-      date: new Date(2024, 11, 20, 8, 0), // December 20, 2024, 8:00 AM
-      title: 'Emergency Seal Repair',
-      description: 'Replace failed mechanical seal',
-      technician: 'Emergency Team',
-      priority: 'critical',
-      status: 'completed',
-      estimatedDuration: 2,
-      requiredParts: ['55916'],
-      usedParts: [
-        {
-          partNumber: '55916',
-          description: 'SHIM FASTENAL NUMBER 7041808',
-          quantityUsed: 2,
-          isWearItem: true
-        }
-      ]
-    },
-    {
-      id: 'maint-005',
-      assetId: 'AST-005',
-      assetName: 'Electric Motor Drive',
-      type: 'calibration',
-      date: new Date(2025, 0, 5, 13, 0), // January 5, 2025, 1:00 PM
-      title: 'Motor Calibration',
-      description: 'Calibrate motor control parameters',
-      technician: 'Specialist Team',
-      priority: 'medium',
-      status: 'scheduled',
-      estimatedDuration: 2,
-      requiredParts: ['ABB-BEARING-001']
-    },
-    {
-      id: 'maint-006',
-      assetId: 'AST-002',
-      assetName: 'Rotary Screw Compressor',
-      type: 'preventive',
-      date: new Date(2024, 11, 15, 11, 0), // December 15, 2024, 11:00 AM (overdue)
-      title: 'Overdue Oil Change',
-      description: 'Change compressor oil and filter',
-      technician: 'John Smith',
-      priority: 'high',
-      status: 'overdue',
-      estimatedDuration: 1.5,
-      requiredParts: ['AC-FILTER-001']
-    }
-  ], []);
 
   // Convert maintenance items to assets for selection hook
   const assetsForSelection = filteredAndSortedItems.map(item => item.asset);
@@ -362,101 +243,8 @@ const MaintenancePage: React.FC = () => {
     }, 5000);
   };
 
-  // Calendar event handlers
-  const handleEventClick = (event: MaintenanceEvent) => {
-    setSelectedEvent(event);
-    setShowEventModal(true);
-  };
-
-  const handleDateClick = (date: Date) => {
-    console.log('Date clicked:', date);
-  };
-
-  const handleScheduleNew = (date: Date) => {
-    console.log('Schedule new maintenance for:', date);
-    // This would open the maintenance scheduling modal with the selected date
-  };
-
-  const handleCompleteEvent = async (event: MaintenanceEvent) => {
-    // Simulate completing maintenance
-    console.log('Completing maintenance:', event);
-    
-    // Add completion note to asset history
-    if (event.assetId !== 'GENERAL') {
-      const asset = assets.find(a => a.id === event.assetId);
-      if (asset) {
-        const partsUsedText = event.usedParts && event.usedParts.length > 0
-          ? ` Parts used: ${event.usedParts.map(p => `${p.partNumber} (${p.quantityUsed})`).join(', ')}`
-          : '';
-        
-        const note = {
-          id: `note-${Date.now()}`,
-          date: new Date().toISOString(),
-          text: `Maintenance "${event.title}" completed successfully.${partsUsedText}`,
-          type: 'maintenance' as const,
-          source: 'calendar' as const
-        };
-        
-        console.log('Adding completion note to asset:', { assetId: asset.id, note });
-      }
-    }
-  };
-
-  const handleUpdateEvent = async (updatedEvent: MaintenanceEvent) => {
-    // Simulate updating maintenance event
-    console.log('Updating maintenance event:', updatedEvent);
-    
-    // In a real implementation, this would update the event in the backend
-    // For now, we'll just log the update and close the modal
-    
-    // Add a note to the associated asset about the rescheduling
-    if (updatedEvent.assetId !== 'GENERAL') {
-      const asset = assets.find(a => a.id === updatedEvent.assetId);
-      if (asset) {
-        const note = {
-          id: `note-${Date.now()}`,
-          date: new Date().toISOString(),
-          text: `Maintenance "${updatedEvent.title}" rescheduled to ${updatedEvent.date.toLocaleDateString()}`,
-          type: 'maintenance' as const,
-          source: 'calendar' as const
-        };
-        
-        // In real implementation, this would update the asset in the backend
-        console.log('Adding note to asset:', { assetId: asset.id, note });
-      }
-    }
-    
-    setShowEventModal(false);
-    setSelectedEvent(null);
-  };
-
-  const handleCancelEvent = async (event: MaintenanceEvent) => {
-    // Simulate cancelling maintenance event
-    console.log('Cancelling maintenance event:', event);
-    
-    // Add a note to the associated asset about the cancellation
-    if (event.assetId !== 'GENERAL') {
-      const asset = assets.find(a => a.id === event.assetId);
-      if (asset) {
-        const note = {
-          id: `note-${Date.now()}`,
-          date: new Date().toISOString(),
-          text: `Maintenance "${event.title}" was cancelled`,
-          type: 'maintenance' as const,
-          source: 'calendar' as const
-        };
-        
-        // In real implementation, this would update the asset in the backend
-        console.log('Adding note to asset:', { assetId: asset.id, note });
-      }
-    }
-    
-    setShowEventModal(false);
-    setSelectedEvent(null);
-  };
   const tabs = [
     { id: 'needs-attention', label: 'Needs Attention', count: stats.assetsNeedingAttention },
-    { id: 'scheduled', label: 'Scheduled', count: mockMaintenanceEvents.filter(e => e.status === 'scheduled').length },
     { id: 'history', label: 'History', count: 0 }
   ];
 
@@ -672,61 +460,6 @@ const MaintenancePage: React.FC = () => {
             </div>
           )}
 
-          {/* Placeholder for other tabs */}
-          {activeTab === 'scheduled' && (
-            <div className="p-6 text-center py-12">
-              {/* Filters for Calendar */}
-              <div className={`mb-6 flex flex-col space-y-4 ${
-                deviceType !== 'mobile' ? 'sm:flex-row sm:items-center sm:justify-between sm:space-y-0' : ''
-              }`}>
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <select
-                      value={assetFilter}
-                      onChange={(e) => setAssetFilter(e.target.value)}
-                      className={`pl-10 pr-4 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        deviceType === 'mobile' ? 'py-3 min-h-[44px] w-full' : 'py-2'
-                      }`}
-                    >
-                      <option value="">All Assets</option>
-                      {assets.map(asset => (
-                        <option key={asset.id} value={asset.id}>{asset.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className={`border border-gray-300 rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      deviceType === 'mobile' ? 'py-3 min-h-[44px] w-full' : 'py-2'
-                    }`}
-                  >
-                    <option value="">All Types</option>
-                    <option value="preventive">Preventive</option>
-                    <option value="corrective">Corrective</option>
-                    <option value="emergency">Emergency</option>
-                    <option value="inspection">Inspection</option>
-                    <option value="calibration">Calibration</option>
-                  </select>
-                </div>
-              </div>
-
-              <Suspense fallback={<MaintenanceSkeletonLoader rows={6} />}>
-                <MaintenanceCalendar
-                  events={mockMaintenanceEvents}
-                  assets={assets}
-                  onEventClick={handleEventClick}
-                  onDateClick={handleDateClick}
-                  onScheduleNew={handleScheduleNew}
-                  selectedAssetFilter={assetFilter}
-                  selectedTypeFilter={typeFilter}
-                />
-              </Suspense>
-            </div>
-          )}
-
           {activeTab === 'history' && (
             <div className="p-6 text-center py-12">
               <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -783,39 +516,6 @@ const MaintenancePage: React.FC = () => {
           onClose={clearOperationState}
         />
 
-        {/* Calendar Event Modal */}
-        <Suspense fallback={null}>
-          {deviceType === 'mobile' ? (
-            <BottomSheet
-              isOpen={showEventModal}
-              onClose={() => setShowEventModal(false)}
-              title={selectedEvent?.title || 'Maintenance Event'}
-              height="auto"
-            >
-              {selectedEvent && (
-                <CalendarEventModal
-                  isOpen={true}
-                  onClose={() => setShowEventModal(false)}
-                  event={selectedEvent}
-                  asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
-                  onComplete={handleCompleteEvent}
-                  onUpdate={handleUpdateEvent}
-                  onCancel={handleCancelEvent}
-                />
-              )}
-            </BottomSheet>
-          ) : (
-            <CalendarEventModal
-              isOpen={showEventModal}
-              onClose={() => setShowEventModal(false)}
-              event={selectedEvent}
-              asset={selectedEvent ? assets.find(a => a.id === selectedEvent.assetId) : undefined}
-              onComplete={handleCompleteEvent}
-              onUpdate={handleUpdateEvent}
-              onCancel={handleCancelEvent}
-            />
-          )}
-        </Suspense>
       </div>
     </div>
   );
