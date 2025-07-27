@@ -19,6 +19,7 @@ import { calculateDashboardMetrics } from '../utils/dashboardMetrics';
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Calculate dashboard metrics using utility function with memoization
   const metrics = useMemo(() => {
@@ -132,7 +133,7 @@ const DashboardPage: React.FC = () => {
         )}
 
         {/* Main Stats Grid - 4 columns with equal height */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatCard
             title="Total Equipment"
             value={metrics.totalEquipment}
@@ -148,29 +149,33 @@ const DashboardPage: React.FC = () => {
               label: "View Equipment",
               onClick: navigationHandlers.viewEquipment
             }}
+            isLoading={isLoading}
           />
 
           <MaintenanceSchedulingCard
             totalAssets={metrics.totalEquipment}
             assetsWithMaintenance={metrics.assetsWithMaintenance}
             onScheduleMaintenance={navigationHandlers.scheduleMaintenance}
+            isLoading={isLoading}
           />
 
           <AssetStatusCard
             totalAssets={metrics.totalEquipment}
             assetsNotOperating={metrics.assetsNotOperating}
             onUpdateAssets={navigationHandlers.updateAssets}
+            isLoading={isLoading}
           />
 
           <PartsEngagementCard
             totalAssets={metrics.totalEquipment}
             assetsWithNoPartsActivity={metrics.assetsWithNoPartsActivity}
             onViewOpportunities={navigationHandlers.reviewPartsHistory}
+            isLoading={isLoading}
           />
         </div>
 
-        {/* Secondary Stats Row - 2 columns for better spacing */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Secondary Stats Row - Responsive grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {metrics.openOrders > 0 ? (
             <StatCard
               title="Open Orders"
@@ -182,6 +187,8 @@ const DashboardPage: React.FC = () => {
                 label: "View Orders",
                 onClick: navigationHandlers.viewOrders
               }}
+              isLoading={isLoading}
+              isLoading={isLoading}
             />
           ) : (
             <EmptyStateCard
@@ -207,8 +214,8 @@ const DashboardPage: React.FC = () => {
           />
         </div>
 
-        {/* Recent Activity - Full width for better content display */}
-        <div className="mb-8">
+        {/* Recent Activity - Full width */}
+        <div className="mb-6 sm:mb-8">
           <RecentActivityCard
             activities={recentActivities}
             onViewAll={navigationHandlers.viewActivity}
