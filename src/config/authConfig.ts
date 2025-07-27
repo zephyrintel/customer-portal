@@ -26,6 +26,16 @@ export const msalConfig: Configuration = {
     storeAuthStateInCookie: false, // Set to true for IE11 or Edge
   },
   system: {
+    allowNativeBroker: false, // Disable native broker for web apps
+    loggerOptions: {
+    postLogoutRedirectUri: getRedirectUri(),
+    navigateToLoginRequestUrl: false,
+  },
+  cache: {
+    cacheLocation: 'sessionStorage', // Store tokens in sessionStorage for security
+    storeAuthStateInCookie: false, // Set to true for IE11 or Edge
+  },
+  system: {
     loggerOptions: {
       loggerCallback: (level, message, containsPii) => {
         if (containsPii) {

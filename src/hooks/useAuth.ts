@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMsal } from '@azure/msal-react';
-import { AccountInfo, InteractionStatus, SilentRequest } from '@azure/msal-browser';
+import { AccountInfo, InteractionStatus, SilentRequest, AuthenticationResult } from '@azure/msal-browser';
 import { loginRequest, popupRequest, graphConfig } from '../config/authConfig';
 import { UserProfile, AuthState, LoginError } from '../types/auth';
 
 export const useAuth = () => {
   const { instance, accounts, inProgress } = useMsal();
+  const [isWaitingForAuth, setIsWaitingForAuth] = useState(false);
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     user: null,
@@ -62,14 +63,77 @@ export const useAuth = () => {
     }
   }, [instance]);
 
-  // Login with popup (preferred method)
-  const loginPopup = useCallback(async (): Promise<void> => {
+  // Login with new tab (iframe-safe method)
+  const loginNewTab = useCallback(async (): Promise<void> => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setIsWaitingForAuth(true);
 
     try {
-      const response = await instance.loginPopup(popupRequest);
+      // Generate auth URL
+      const authUrl = await instance.getAuthCodeUrl({
+        ...loginRequest,
+        redirectUri: window.location.origin + '/auth-callback'
+      });
+
+      // Clear any existing auth state
+      localStorage.removeItem('msal_auth_result');
+      localStorage.removeItem('msal_auth_error');
+
+      // Open auth in new tab
+      const authWindow = window.open(
+        authUrl,
+        'msalAuth',
+        'width=500,height=600,scrollbars=yes,resizable=yes,status=yes,location=yes,toolbar=no,menubar=no'
+      );
+
+      if (!authWindow) {
+        throw new Error('Failed to open authentication window. Please allow popups and try again.');
+      }
+
+      // Poll for auth completion
+      const pollForAuth = () => {
+        return new Promise<AuthenticationResult>((resolve, reject) => {
+          const pollInterval = setInterval(() => {
+            try {
+              // Check if window is closed
+              if (authWindow.closed) {
+                clearInterval(pollInterval);
+                
+                // Check for auth result in localStorage
+                const authResult = localStorage.getItem('msal_auth_result');
+                const authError = localStorage.getItem('msal_auth_error');
+                
+                if (authError) {
+                  reject(new Error(authError));
+                } else if (authResult) {
+                  resolve(JSON.parse(authResult));
+                } else {
+                  reject(new Error('Authentication was cancelled or failed'));
+                }
+              }
+            } catch (error) {
+              // Window might be cross-origin, continue polling
+            }
+          }, 1000);
+
+          // Timeout after 5 minutes
+          setTimeout(() => {
+            clearInterval(pollInterval);
+            if (!authWindow.closed) {
+              authWindow.close();
+            }
+            reject(new Error('Authentication timeout'));
+          }, 300000);
+        });
+      };
+
+      const response = await pollForAuth();
       
-      if (response.account) {
+      // Clean up localStorage
+      localStorage.removeItem('msal_auth_result');
+      localStorage.removeItem('msal_auth_error');
+
+      if (response && response.account) {
         const accessToken = await acquireTokenSilently(response.account);
         if (accessToken) {
           const userProfile = await getUserProfile(accessToken);
@@ -82,19 +146,14 @@ export const useAuth = () => {
         }
       }
     } catch (error: any) {
-      console.error('Popup login failed:', error);
-      
-      // If popup is blocked, fall back to redirect
-      if (error.errorCode === 'popup_window_error' || error.errorCode === 'empty_window_error') {
-        console.log('Popup blocked, falling back to redirect login');
-        await loginRedirect();
-      } else {
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error.errorMessage || 'Login failed',
-        }));
-      }
+      console.error('New tab login failed:', error);
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error.message || 'Login failed',
+      }));
+    } finally {
+      setIsWaitingForAuth(false);
     }
   }, [instance, acquireTokenSilently, getUserProfile]);
 
@@ -198,9 +257,10 @@ export const useAuth = () => {
 
   return {
     ...authState,
-    loginPopup,
+    loginNewTab,
     loginRedirect,
     logout,
+    isWaitingForAuth,
     isInteractionInProgress: inProgress !== InteractionStatus.None,
   };
 };

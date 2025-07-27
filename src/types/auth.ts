@@ -17,6 +17,7 @@ export interface AuthState {
   user: UserProfile | null;
   isLoading: boolean;
   error: string | null;
+  isWaitingForAuth?: boolean;
 }
 
 export interface LoginError {

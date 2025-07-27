@@ -1,19 +1,19 @@
 import React from 'react';
-import { Shield, Loader2, AlertCircle, Building2, Users, Lock } from 'lucide-react';
+import { Shield, Loader2, AlertCircle, Building2, Users, Lock, ExternalLink, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const LoginPage: React.FC = () => {
-  const { loginPopup, isLoading, error, isInteractionInProgress } = useAuth();
+  const { loginNewTab, isLoading, error, isInteractionInProgress, isWaitingForAuth } = useAuth();
 
   const handleLogin = async () => {
     try {
-      await loginPopup();
+      await loginNewTab();
     } catch (error) {
       console.error('Login failed:', error);
     }
   };
 
-  const isLoginDisabled = isLoading || isInteractionInProgress;
+  const isLoginDisabled = isLoading || isInteractionInProgress || isWaitingForAuth;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -57,6 +57,42 @@ const LoginPage: React.FC = () => {
             </div>
           )}
 
+          {/* Waiting for Auth Message */}
+          {isWaitingForAuth && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <ExternalLink className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Authentication in Progress
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Please complete the sign-in process in the new tab that opened. 
+                    This window will automatically update when authentication is complete.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Info Message */}
+          {!isWaitingForAuth && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <ExternalLink className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Secure Authentication
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Authentication will open in a new tab for enhanced security. 
+                    Please ensure popups are enabled for this site.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Microsoft Sign In Button */}
           <button
             onClick={handleLogin}
@@ -66,7 +102,9 @@ const LoginPage: React.FC = () => {
             {isLoginDisabled ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin mr-3" />
-                <span>Signing in...</span>
+                <span>
+                  {isWaitingForAuth ? 'Waiting for authentication...' : 'Signing in...'}
+                </span>
               </>
             ) : (
               <>
@@ -89,6 +127,7 @@ const LoginPage: React.FC = () => {
                   />
                 </svg>
                 <span>Sign in with Microsoft</span>
+                <ExternalLink className="h-4 w-4 ml-2" />
               </>
             )}
           </button>
