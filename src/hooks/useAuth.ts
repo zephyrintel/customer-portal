@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { AccountInfo, InteractionStatus, SilentRequest, AuthenticationResult } from '@azure/msal-browser';
-import { loginRequest, popupRequest, graphConfig } from '../config/authConfig';
+import { loginRequest, popupRequest, graphConfig, msalConfig } from '../config/authConfig';
 import { UserProfile, AuthState, LoginError } from '../types/auth';
 
 export const useAuth = () => {
