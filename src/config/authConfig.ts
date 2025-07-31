@@ -12,14 +12,14 @@ const getRedirectUri = (): string => {
   return window.location.origin;
 };
 
-// MSAL Configuration
+// MSAL Configuration for SPA
 export const msalConfig: Configuration = {
   auth: {
     clientId: '83cc70c2-c49b-4811-afa4-ebcbd8ddfc75',
     authority: 'https://login.microsoftonline.com/common',
     redirectUri: getRedirectUri(),
     postLogoutRedirectUri: getRedirectUri(),
-    navigateToLoginRequestUrl: false
+    navigateToLoginRequestUrl: true
   },
   cache: {
     cacheLocation: 'sessionStorage',
@@ -51,10 +51,11 @@ export const msalConfig: Configuration = {
   }
 };
 
-// Add scopes for login request
+// Add scopes for login request with fragment response mode
 export const loginRequest: RedirectRequest = {
   scopes: ['User.Read', 'openid', 'profile', 'email'],
   prompt: 'select_account',
+  responseMode: 'fragment'
 };
 
 // Popup login request

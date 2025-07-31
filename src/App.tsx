@@ -9,6 +9,15 @@ import AuthenticatedApp from './components/Auth/AuthenticatedApp';
 // Create MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
 
+// Handle redirect promise on app initialization
+msalInstance.handleRedirectPromise().then(response => {
+  if (response) {
+    console.log('Authentication successful:', response);
+  }
+}).catch(error => {
+  console.error('Authentication error:', error);
+});
+
 // App content component that uses auth hook
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();

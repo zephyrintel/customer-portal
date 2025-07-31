@@ -8,7 +8,7 @@ const isDevelopment = window.location.hostname === 'localhost' ||
                      window.location.hostname.includes('bolt.new');
 
 const LoginPage: React.FC = () => {
-  const { loginNewTab, isLoading, error, isInteractionInProgress, isWaitingForAuth } = useAuth();
+  const { loginRedirect, loginPopup, isLoading, error, isInteractionInProgress } = useAuth();
   
   const handleDevBypass = () => {
     // Create a mock user for development
@@ -32,15 +32,23 @@ const LoginPage: React.FC = () => {
     window.location.reload();
   };
 
-  const handleLogin = async () => {
+  const handleLoginRedirect = async () => {
     try {
-      await loginNewTab();
+      await loginRedirect();
     } catch (error) {
       console.error('Login failed:', error);
     }
   };
 
-  const isLoginDisabled = isLoading || isInteractionInProgress || isWaitingForAuth;
+  const handleLoginPopup = async () => {
+    try {
+      await loginPopup();
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  const isLoginDisabled = isLoading || isInteractionInProgress;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -84,36 +92,17 @@ const LoginPage: React.FC = () => {
             </div>
           )}
 
-          {/* Waiting for Auth Message */}
-          {isWaitingForAuth && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <ExternalLink className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
-                <div>
-                  <h3 className="text-sm font-medium text-blue-800">
-                    Authentication in Progress
-                  </h3>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Please complete the sign-in process in the new tab that opened. 
-                    This window will automatically update when authentication is complete.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Info Message */}
-          {!isWaitingForAuth && (
+          {!isInteractionInProgress && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center">
-                <ExternalLink className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
+                <Shield className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
                 <div>
                   <h3 className="text-sm font-medium text-blue-800">
                     Secure Authentication
                   </h3>
                   <p className="text-sm text-blue-700 mt-1">
-                    Authentication will open in a new tab for enhanced security. 
-                    Please ensure popups are enabled for this site.
+                    Sign in with your Microsoft account to access the platform.
                   </p>
                 </div>
               </div>
@@ -122,7 +111,7 @@ const LoginPage: React.FC = () => {
 
           {/* Microsoft Sign In Button */}
           <button
-            onClick={handleLogin}
+            onClick={handleLoginRedirect}
             disabled={isLoginDisabled}
             className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-h-[56px]"
           >
@@ -130,7 +119,7 @@ const LoginPage: React.FC = () => {
               <>
                 <Loader2 className="h-5 w-5 animate-spin mr-3" />
                 <span>
-                  {isWaitingForAuth ? 'Waiting for authentication...' : 'Signing in...'}
+                  {isInteractionInProgress ? 'Signing in...' : 'Loading...'}
                 </span>
               </>
             ) : (
@@ -154,10 +143,23 @@ const LoginPage: React.FC = () => {
                   />
                 </svg>
                 <span>Sign in with Microsoft</span>
-                <ExternalLink className="h-4 w-4 ml-2" />
               </>
             )}
           </button>
+
+          {/* Alternative Popup Login */}
+          <button
+            onClick={handleLoginPopup}
+            disabled={isLoginDisabled}
+            className="w-full flex items-center justify-center px-6 py-3 border border-blue-300 rounded-lg bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            <span>Sign in with Popup</span>
+          </button>
+          
+          <p className="text-xs text-gray-500 text-center">
+            Use popup if redirect doesn't work in your browser
+          </p>
 
           {/* Development Bypass Button */}
           {isDevelopment && (
