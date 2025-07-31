@@ -384,7 +384,7 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                       type="date"
                       value={editForm.date}
                       onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm min-h-[44px]"
                     />
                   ) : (
                     <p className="text-sm font-medium text-gray-900">{formatDate(event.date)}</p>
