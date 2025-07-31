@@ -41,6 +41,8 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [showCalendar, setShowCalendar] = useState(true);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const deviceType = useDeviceType();
 
   // Maintenance type configuration
@@ -99,15 +101,105 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     });
   }, [filteredEvents]);
 
+  // Generate calendar days
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+    
+    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+      days.push(new Date(date));
+    }
+    
+    return days;
+  }, [currentDate]);
+
+  // Date utility functions
+  const isCurrentMonth = useCallback((date: Date) => {
+    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
+  }, [currentDate]);
+
+  const isToday = useCallback((date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }, []);
+
+  const isPastDate = useCallback((date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  }, []);
+
+  // Navigation functions
+  const navigateToDate = useCallback((direction: 'prev' | 'next', unit: 'month' | 'year') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (unit === 'month') {
+        newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      } else {
+        newDate.setFullYear(prev.getFullYear() + (direction === 'next' ? 1 : -1));
+      }
+      return newDate;
+    });
+  }, []);
+
+  const goToMonth = useCallback((year: number, month: number) => {
+    setCurrentDate(new Date(year, month, 1));
+    setShowDatePicker(false);
+  }, []);
+
   const goToToday = useCallback(() => {
-    setSelectedDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+    setShowDatePicker(false);
+  }, []);
+
+  // Format month/year display
+  const formatMonthYear = useCallback((date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
+
+  // Generate date options for dropdown
+  const generateDateOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return { years, months };
   }, []);
 
   // Handle date click
+  const handleDateClick = useCallback((date: Date) => {
+    setSelectedDate(date);
+    onDateClick(date);
+    
+    // If no events on this date, offer to schedule new maintenance
+    const dayEvents = getEventsForDate(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dayEvents.length === 0 && date >= today) {
+      onScheduleNew(date);
+    }
+  }, [onDateClick, onScheduleNew, getEventsForDate]);
+
+  // Handle date change
   const handleDateChange = useCallback((date: Date | Date[]) => {
     const selectedDate = Array.isArray(date) ? date[0] : date;
     setSelectedDate(selectedDate);
-    onDateClick(date);
+    onDateClick(selectedDate);
     
     // If no events on this date, offer to schedule new maintenance
     const dayEvents = getEventsForDate(selectedDate);
@@ -232,6 +324,111 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     setSelectedDate(newDate);
     onDateClick(newDate);
   };
+
+  // Render individual event
+  const renderEvent = useCallback((event: MaintenanceEvent, isCompact = false) => {
+    const typeConfig = maintenanceTypes[event.type];
+    
+    if (isCompact) {
+      return (
+        <div
+          key={event.id}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEventClick(event);
+          }}
+          className={`w-2 h-2 rounded-full ${typeConfig.color} cursor-pointer hover:scale-125 transition-transform duration-150`}
+          title={`${event.title} - ${event.assetName}`}
+        />
+      );
+    }
+
+    return (
+      <div
+        key={event.id}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+        }}
+        className={`text-xs p-1 mb-1 rounded cursor-pointer transition-all duration-150 hover:shadow-sm ${typeConfig.lightColor} ${typeConfig.textColor} ${typeConfig.borderColor} border`}
+      >
+        <div className="font-medium truncate">{event.title}</div>
+        <div className="text-xs opacity-75 truncate">{event.assetName}</div>
+      </div>
+    );
+  }, [onEventClick, maintenanceTypes]);
+
+  // Mobile day view
+  const renderMobileDay = useCallback((date: Date, dayEvents: MaintenanceEvent[]) => {
+    const isCurrentMonthDay = isCurrentMonth(date);
+    const isTodayDate = isToday(date);
+    const isPast = isPastDate(date);
+
+    return (
+      <div
+        key={date.toISOString()}
+        onClick={() => handleDateClick(date)}
+        className={`min-h-[80px] p-2 border-b border-gray-200 cursor-pointer transition-colors duration-150 ${
+          isTodayDate ? 'bg-blue-50' : 'hover:bg-gray-50'
+        } ${!isCurrentMonthDay ? 'opacity-50' : ''} ${isPast ? 'bg-gray-50' : ''}`}
+      >
+        <div className={`text-sm font-medium mb-2 ${
+          isTodayDate ? 'text-blue-600' : isCurrentMonthDay ? 'text-gray-900' : 'text-gray-400'
+        }`}>
+          {date.getDate()}
+          {isTodayDate && <span className="ml-1 text-xs">(Today)</span>}
+        </div>
+        
+        <div className="space-y-1">
+          {dayEvents.slice(0, 3).map(event => renderEvent(event))}
+          {dayEvents.length > 3 && (
+            <div className="text-xs text-gray-500">
+              +{dayEvents.length - 3} more
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
+
+  // Desktop calendar cell
+  const renderDesktopDay = useCallback((date: Date, dayEvents: MaintenanceEvent[]) => {
+    const isCurrentMonthDay = isCurrentMonth(date);
+    const isTodayDate = isToday(date);
+    const isPast = isPastDate(date);
+
+    return (
+      <div
+        key={date.toISOString()}
+        onClick={() => handleDateClick(date)}
+        className={`min-h-[120px] p-2 border border-gray-200 cursor-pointer transition-all duration-150 ${
+          isTodayDate ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'
+        } ${!isCurrentMonthDay ? 'opacity-50' : ''} ${isPast ? 'bg-gray-50' : ''}`}
+      >
+        <div className={`text-sm font-medium mb-2 ${
+          isTodayDate ? 'text-blue-600' : isCurrentMonthDay ? 'text-gray-900' : 'text-gray-400'
+        }`}>
+          {date.getDate()}
+        </div>
+        
+        <div className="space-y-1">
+          {dayEvents.slice(0, 2).map(event => renderEvent(event))}
+          {dayEvents.length > 2 && (
+            <div className="flex space-x-1">
+              {dayEvents.slice(2, 5).map(event => renderEvent(event, true))}
+              {dayEvents.length > 5 && (
+                <div className="text-xs text-gray-500">
+                  +{dayEvents.length - 5}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
+
+  const { years, months } = generateDateOptions;
 
   return (
     <div className="bg-white rounded-lg shadow-lg">
@@ -376,6 +573,173 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     </div>
   );
 });
+
+const MaintenanceCalendarAlternate: React.FC<MaintenanceCalendarProps> = memo(({
+  events,
+  assets,
+  onEventClick,
+  onDateClick,
+  onScheduleNew,
+  selectedAssetFilter,
+  selectedTypeFilter
+}) => {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const deviceType = useDeviceType();
+
+  // Maintenance type configuration
+  const maintenanceTypes = {
+    preventive: { 
+      label: 'Preventive', 
+      color: 'bg-blue-500', 
+      lightColor: 'bg-blue-100', 
+      textColor: 'text-blue-800',
+      borderColor: 'border-blue-200'
+    },
+    corrective: { 
+      label: 'Corrective', 
+      color: 'bg-orange-500', 
+      lightColor: 'bg-orange-100', 
+      textColor: 'text-orange-800',
+      borderColor: 'border-orange-200'
+    },
+    emergency: { 
+      label: 'Emergency', 
+      color: 'bg-red-500', 
+      lightColor: 'bg-red-100', 
+      textColor: 'text-red-800',
+      borderColor: 'border-red-200'
+    },
+    inspection: { 
+      label: 'Inspection', 
+      color: 'bg-purple-500', 
+      lightColor: 'bg-purple-100', 
+      textColor: 'text-purple-800',
+      borderColor: 'border-purple-200'
+    },
+    calibration: { 
+      label: 'Calibration', 
+      color: 'bg-green-500', 
+      lightColor: 'bg-green-100', 
+      textColor: 'text-green-800',
+      borderColor: 'border-green-200'
+    }
+  };
+
+  // Filter events based on selected filters
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const assetMatch = !selectedAssetFilter || event.assetId === selectedAssetFilter;
+      const typeMatch = !selectedTypeFilter || event.type === selectedTypeFilter;
+      return assetMatch && typeMatch;
+    });
+  }, [events, selectedAssetFilter, selectedTypeFilter]);
+
+  // Get events for a specific date
+  const getEventsForDate = useCallback((date: Date) => {
+    return filteredEvents.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.toDateString() === date.toDateString();
+    });
+  }, [filteredEvents]);
+
+  // Generate calendar days
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+    
+    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+      days.push(new Date(date));
+    }
+    
+    return days;
+  }, [currentDate]);
+
+  // Date utility functions
+  const isCurrentMonth = useCallback((date: Date) => {
+    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
+  }, [currentDate]);
+
+  const isToday = useCallback((date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }, []);
+
+  const isPastDate = useCallback((date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  }, []);
+
+  // Navigation functions
+  const navigateToDate = useCallback((direction: 'prev' | 'next', unit: 'month' | 'year') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (unit === 'month') {
+        newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      } else {
+        newDate.setFullYear(prev.getFullYear() + (direction === 'next' ? 1 : -1));
+      }
+      return newDate;
+    });
+  }, []);
+
+  const goToMonth = useCallback((year: number, month: number) => {
+    setCurrentDate(new Date(year, month, 1));
+    setShowDatePicker(false);
+  }, []);
+
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+    setShowDatePicker(false);
+  }, []);
+
+  // Format month/year display
+  const formatMonthYear = useCallback((date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
+
+  // Generate date options for dropdown
+  const generateDateOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return { years, months };
+  }, []);
+
+  // Handle date click
+  const handleDateClick = useCallback((date: Date) => {
+    setSelectedDate(date);
+    onDateClick(date);
+    
+    // If no events on this date, offer to schedule new maintenance
+    const dayEvents = getEventsForDate(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dayEvents.length === 0 && date >= today) {
+      onScheduleNew(date);
+    }
+  }, [onDateClick, onScheduleNew, getEventsForDate]);
+
+  // Render individual event
+  const renderEvent = useCallback((event: MaintenanceEvent, isCompact = false) => {
     const typeConfig = maintenanceTypes[event.type];
     
     if (isCompact) {
