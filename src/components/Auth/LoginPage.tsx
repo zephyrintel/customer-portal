@@ -2,8 +2,35 @@ import React from 'react';
 import { Shield, Loader2, AlertCircle, Building2, Users, Lock, ExternalLink, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
+// Development bypass - only works in development environment
+const isDevelopment = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname.includes('bolt.new');
+
 const LoginPage: React.FC = () => {
   const { loginNewTab, isLoading, error, isInteractionInProgress, isWaitingForAuth } = useAuth();
+  
+  const handleDevBypass = () => {
+    // Create a mock user for development
+    const mockUser = {
+      id: 'dev-user-123',
+      displayName: 'Development User',
+      givenName: 'Dev',
+      surname: 'User',
+      userPrincipalName: 'dev.user@acmepump.com',
+      mail: 'dev.user@acmepump.com',
+      jobTitle: 'Equipment Manager',
+      department: 'Operations',
+      companyName: 'AcmePump Solutions'
+    };
+    
+    // Store mock auth state
+    sessionStorage.setItem('dev_bypass_auth', 'true');
+    sessionStorage.setItem('dev_bypass_user', JSON.stringify(mockUser));
+    
+    // Reload to trigger auth state update
+    window.location.reload();
+  };
 
   const handleLogin = async () => {
     try {
@@ -131,6 +158,22 @@ const LoginPage: React.FC = () => {
               </>
             )}
           </button>
+
+          {/* Development Bypass Button */}
+          {isDevelopment && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={handleDevBypass}
+                className="w-full flex items-center justify-center px-6 py-3 border-2 border-dashed border-yellow-300 rounded-lg bg-yellow-50 text-yellow-800 font-medium hover:bg-yellow-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                Development Bypass (Skip Auth)
+              </button>
+              <p className="text-xs text-yellow-600 mt-2 text-center">
+                ⚠️ Development only - bypasses Microsoft authentication
+              </p>
+            </div>
+          )}
 
           {/* Features */}
           <div className="pt-6 border-t border-gray-200">

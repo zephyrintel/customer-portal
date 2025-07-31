@@ -208,6 +208,28 @@ export const useAuth = () => {
   // Handle redirect result on page load
   useEffect(() => {
     const handleRedirectResult = async () => {
+      // Check for development bypass first
+      const devBypass = sessionStorage.getItem('dev_bypass_auth');
+      const devUser = sessionStorage.getItem('dev_bypass_user');
+      
+      if (devBypass === 'true' && devUser) {
+        try {
+          const userProfile = JSON.parse(devUser);
+          setAuthState({
+            isAuthenticated: true,
+            user: userProfile,
+            isLoading: false,
+            error: null,
+          });
+          return;
+        } catch (error) {
+          console.error('Error parsing dev user:', error);
+          // Clear invalid dev data and continue with normal auth
+          sessionStorage.removeItem('dev_bypass_auth');
+          sessionStorage.removeItem('dev_bypass_user');
+        }
+      }
+      
       if (inProgress === InteractionStatus.None) {
         try {
           const response = await instance.handleRedirectPromise();

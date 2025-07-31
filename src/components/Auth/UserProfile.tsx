@@ -5,11 +5,22 @@ import { useAuth } from '../../hooks/useAuth';
 const UserProfile: React.FC = () => {
   const { user, logout, isLoading } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  
+  // Check if using development bypass
+  const isDevBypass = sessionStorage.getItem('dev_bypass_auth') === 'true';
 
   if (!user) return null;
 
   const handleLogout = async () => {
     try {
+      // Handle development bypass logout
+      if (isDevBypass) {
+        sessionStorage.removeItem('dev_bypass_auth');
+        sessionStorage.removeItem('dev_bypass_user');
+        window.location.reload();
+        return;
+      }
+      
       await logout();
     } catch (error) {
       console.error('Logout failed:', error);
@@ -61,10 +72,20 @@ const UserProfile: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-medium">
                   {getInitials(user.displayName)}
+                  {isDevBypass && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs text-white">D</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-medium text-gray-900 truncate">
                     {user.displayName}
+                    {isDevBypass && (
+                      <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">
+                        DEV
+                      </span>
+                    )}
                   </h3>
                   <p className="text-xs text-gray-500 truncate">
                     {user.mail}
@@ -121,6 +142,14 @@ const UserProfile: React.FC = () => {
 
             {/* Actions */}
             <div className="border-t border-gray-200 p-2">
+              {isDevBypass && (
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-xs text-yellow-800 text-center">
+                    🔧 Development Mode Active
+                  </p>
+                </div>
+              )}
+              
               <button
                 onClick={() => {
                   setShowDropdown(false);
