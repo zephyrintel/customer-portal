@@ -132,8 +132,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Stats Grid - 4 columns with equal height */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        {/* Main Stats Grid - Responsive columns with equal height */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatCard
             title="Total Equipment"
             value={metrics.totalEquipment}

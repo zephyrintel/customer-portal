@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
   return (
     <div className={`bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
-      isCollapsed ? 'w-16' : 'w-64'
+      isCollapsed ? 'w-16' : 'w-56'
     } flex flex-col h-screen sticky top-0 hidden md:flex`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
