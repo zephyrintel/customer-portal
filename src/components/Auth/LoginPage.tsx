@@ -8,7 +8,7 @@ const isDevelopment = window.location.hostname === 'localhost' ||
                      window.location.hostname.includes('bolt.new');
 
 const LoginPage: React.FC = () => {
-  const { loginRedirect, loginPopup, isLoading, error, isInteractionInProgress } = useAuth();
+  const { loginRedirect, loginPopup, isLoading, error, isInteractionInProgress, environmentInfo } = useAuth();
   
   const handleDevBypass = () => {
     // Create a mock user for development
@@ -49,6 +49,7 @@ const LoginPage: React.FC = () => {
   };
 
   const isLoginDisabled = isLoading || isInteractionInProgress;
+  const showNewTabOption = environmentInfo?.isIframe && environmentInfo?.checked;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -87,13 +88,45 @@ const LoginPage: React.FC = () => {
                     Authentication Error
                   </h3>
                   <p className="text-sm text-red-700 mt-1">{error}</p>
+                  {showNewTabOption && (
+                    <button
+                      onClick={() => window.open(window.location.href, '_blank')}
+                      className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
+                    >
+                      Open in New Tab
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Environment Warning */}
+          {showNewTabOption && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Embedded Application Detected
+                  </h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    This application is running in an embedded frame. For the best authentication experience, please open it in a new tab.
+                  </p>
+                  <button
+                    onClick={() => window.open(window.location.href, '_blank')}
+                    className="mt-2 inline-flex items-center text-sm text-blue-600 hover:text-blue-700 underline"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Open in New Tab
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
           {/* Info Message */}
-          {!isInteractionInProgress && (
+          {!isInteractionInProgress && !showNewTabOption && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center">
                 <Shield className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
@@ -112,7 +145,7 @@ const LoginPage: React.FC = () => {
           {/* Microsoft Sign In Button */}
           <button
             onClick={handleLoginRedirect}
-            disabled={isLoginDisabled}
+            disabled={isLoginDisabled || (environmentInfo?.isIframe && environmentInfo?.checked)}
             className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-h-[56px]"
           >
             {isLoginDisabled ? (
@@ -121,6 +154,11 @@ const LoginPage: React.FC = () => {
                 <span>
                   {isInteractionInProgress ? 'Signing in...' : 'Loading...'}
                 </span>
+              </>
+            ) : environmentInfo?.isIframe && environmentInfo?.checked ? (
+              <>
+                <ExternalLink className="h-5 w-5 mr-3" />
+                <span>Open in New Tab to Sign In</span>
               </>
             ) : (
               <>
@@ -148,18 +186,27 @@ const LoginPage: React.FC = () => {
           </button>
 
           {/* Alternative Popup Login */}
-          <button
-            onClick={handleLoginPopup}
-            disabled={isLoginDisabled}
-            className="w-full flex items-center justify-center px-6 py-3 border border-blue-300 rounded-lg bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            <span>Sign in with Popup</span>
-          </button>
-          
-          <p className="text-xs text-gray-500 text-center">
-            Use popup if redirect doesn't work in your browser
-          </p>
+          {environmentInfo?.checked && (
+            <>
+              <button
+                onClick={handleLoginPopup}
+                disabled={isLoginDisabled || !environmentInfo.canUsePopups}
+                className="w-full flex items-center justify-center px-6 py-3 border border-blue-300 rounded-lg bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                <span>
+                  {!environmentInfo.canUsePopups ? 'Popup Blocked' : 'Sign in with Popup'}
+                </span>
+              </button>
+              
+              <p className="text-xs text-gray-500 text-center">
+                {!environmentInfo.canUsePopups 
+                  ? 'Please disable popup blockers and refresh the page'
+                  : 'Use popup if redirect doesn\'t work in your browser'
+                }
+              </p>
+            </>
+          )}
 
           {/* Development Bypass Button */}
           {isDevelopment && (

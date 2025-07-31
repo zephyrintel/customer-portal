@@ -4,6 +4,29 @@ import { AccountInfo, InteractionStatus, SilentRequest } from '@azure/msal-brows
 import { loginRequest, popupRequest, graphConfig } from '../config/authConfig';
 import { UserProfile, AuthState } from '../types/auth';
 
+// Utility functions for environment detection
+const isInIframe = (): boolean => {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true; // If we can't access window.top, assume we're in an iframe
+  }
+};
+
+const canUsePopups = (): boolean => {
+  try {
+    // Test if we can open a popup
+    const testPopup = window.open('', '_blank', 'width=1,height=1');
+    if (testPopup) {
+      testPopup.close();
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+};
+
 export const useAuth = () => {
   const { instance, accounts, inProgress } = useMsal();
   const [authState, setAuthState] = useState<AuthState>({
@@ -11,6 +34,11 @@ export const useAuth = () => {
     user: null,
     isLoading: true,
     error: null,
+  });
+  const [environmentInfo, setEnvironmentInfo] = useState({
+    isIframe: false,
+    canUsePopups: false,
+    checked: false,
   });
 
   // Get user profile from Microsoft Graph
@@ -64,22 +92,48 @@ export const useAuth = () => {
 
   // Login with redirect (primary method for SPA)
   const loginRedirect = useCallback(async (): Promise<void> => {
+    // Check if we're in an iframe
+    if (environmentInfo.isIframe) {
+      setAuthState(prev => ({
+        ...prev,
+        error: 'Redirect login is not supported in iframe. Please open this application in a new tab or use popup login if available.',
+      }));
+      return;
+    }
+
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       await instance.loginRedirect(loginRequest);
     } catch (error: any) {
       console.error('Redirect login failed:', error);
+      let errorMessage = 'Login failed';
+      
+      if (error.errorCode === 'redirect_in_iframe') {
+        errorMessage = 'This application cannot use redirect login when embedded. Please open in a new tab or try popup login.';
+      } else {
+        errorMessage = error.errorMessage || 'Login failed';
+      }
+      
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.errorMessage || 'Login failed',
+        error: errorMessage,
       }));
     }
-  }, [instance]);
+  }, [instance, environmentInfo.isIframe]);
 
   // Login with popup (fallback method)
   const loginPopup = useCallback(async (): Promise<void> => {
+    // Check if popups are blocked
+    if (!environmentInfo.canUsePopups) {
+      setAuthState(prev => ({
+        ...prev,
+        error: 'Popup login is blocked by your browser. Please disable popup blockers for this site or open the application in a new tab.',
+      }));
+      return;
+    }
+
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -99,13 +153,21 @@ export const useAuth = () => {
       }
     } catch (error: any) {
       console.error('Popup login failed:', error);
+      let errorMessage = 'Popup login failed';
+      
+      if (error.errorCode === 'popup_window_error' || error.errorCode === 'empty_window_error') {
+        errorMessage = 'Popup was blocked by your browser. Please disable popup blockers for this site and try again.';
+      } else {
+        errorMessage = error.errorMessage || 'Popup login failed';
+      }
+      
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.errorMessage || 'Login failed',
+        error: errorMessage,
       }));
     }
-  }, [instance, acquireTokenSilently, getUserProfile]);
+  }, [instance, acquireTokenSilently, getUserProfile, environmentInfo.canUsePopups]);
 
   // Logout
   const logout = useCallback(async (): Promise<void> => {
@@ -129,6 +191,16 @@ export const useAuth = () => {
 
   // Handle authentication state on mount and when accounts change
   useEffect(() => {
+    // Check environment capabilities
+    if (!environmentInfo.checked) {
+      setEnvironmentInfo({
+        isIframe: isInIframe(),
+        canUsePopups: canUsePopups(),
+        checked: true,
+      });
+      return;
+    }
+
     const handleAuthState = async () => {
       // Check for development bypass first
       const devBypass = sessionStorage.getItem('dev_bypass_auth');
@@ -184,8 +256,10 @@ export const useAuth = () => {
       }
     };
 
-    handleAuthState();
-  }, [accounts, inProgress, acquireTokenSilently, getUserProfile]);
+    if (environmentInfo.checked) {
+      handleAuthState();
+    }
+  }, [accounts, inProgress, acquireTokenSilently, getUserProfile, environmentInfo.checked]);
 
   return {
     ...authState,
@@ -193,5 +267,6 @@ export const useAuth = () => {
     loginPopup,
     logout,
     isInteractionInProgress: inProgress !== InteractionStatus.None,
+    environmentInfo,
   };
 };
