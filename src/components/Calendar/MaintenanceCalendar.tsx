@@ -1,5 +1,7 @@
 import React, { useState, useMemo, memo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus, Filter, Eye, ChevronDown } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Filter, Eye, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { Asset } from '../../types/Asset';
 import { useDeviceType } from '../../hooks/useTouch';
 
@@ -36,8 +38,10 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
   selectedAssetFilter,
   selectedTypeFilter
 }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [showCalendar, setShowCalendar] = useState(true);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const deviceType = useDeviceType();
 
@@ -89,27 +93,6 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     });
   }, [events, selectedAssetFilter, selectedTypeFilter]);
 
-  // Generate calendar days
-  const calendarDays = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
-    const days = [];
-    const current = new Date(startDate);
-    
-    for (let i = 0; i < 42; i++) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
-    
-    return days;
-  }, [currentDate]);
-
   // Get events for a specific date
   const getEventsForDate = useCallback((date: Date) => {
     return filteredEvents.filter(event => {
@@ -118,24 +101,45 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     });
   }, [filteredEvents]);
 
+  // Generate calendar days
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+    
+    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+      days.push(new Date(date));
+    }
+    
+    return days;
+  }, [currentDate]);
+
+  // Date utility functions
+  const isCurrentMonth = useCallback((date: Date) => {
+    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
+  }, [currentDate]);
+
+  const isToday = useCallback((date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }, []);
+
+  const isPastDate = useCallback((date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  }, []);
+
   // Navigation functions
-  const navigateMonth = useCallback((direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
-      return newDate;
-    });
-  }, []);
-
-  const goToToday = useCallback(() => {
-    setCurrentDate(new Date());
-  }, []);
-
-  const goToMonth = useCallback((year: number, month: number) => {
-    setCurrentDate(new Date(year, month, 1));
-    setShowDatePicker(false);
-  }, []);
-
   const navigateToDate = useCallback((direction: 'prev' | 'next', unit: 'month' | 'year') => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
@@ -148,58 +152,593 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     });
   }, []);
 
-  // Format date for display
-  const formatMonthYear = useCallback((date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
+  const goToMonth = useCallback((year: number, month: number) => {
+    setCurrentDate(new Date(year, month, 1));
+    setShowDatePicker(false);
   }, []);
 
-  // Generate month/year options for dropdown
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+    setShowDatePicker(false);
+  }, []);
+
+  // Format month/year display
+  const formatMonthYear = useCallback((date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
+
+  // Generate date options for dropdown
   const generateDateOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const years = [];
+    const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
     const months = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-
-    // Generate 2 years back and 2 years forward
-    for (let year = currentYear - 2; year <= currentYear + 2; year++) {
-      years.push(year);
-    }
-
     return { years, months };
   }, []);
+
+  // Handle date click
+  const handleDateClick = useCallback((date: Date) => {
+    setSelectedDate(date);
+    onDateClick(date);
+    
+    // If no events on this date, offer to schedule new maintenance
+    const dayEvents = getEventsForDate(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dayEvents.length === 0 && date >= today) {
+      onScheduleNew(date);
+    }
+  }, [onDateClick, onScheduleNew, getEventsForDate]);
+
+  // Handle date change
+  const handleDateChange = useCallback((date: Date | Date[]) => {
+    const selectedDate = Array.isArray(date) ? date[0] : date;
+    setSelectedDate(selectedDate);
+    onDateClick(selectedDate);
+    
+    // If no events on this date, offer to schedule new maintenance
+    const dayEvents = getEventsForDate(selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dayEvents.length === 0 && selectedDate >= today) {
+      onScheduleNew(selectedDate);
+    }
+  }, [onDateClick, onScheduleNew, getEventsForDate]);
+
+  // Custom tile content for react-calendar
+  const getTileContent = useCallback(({ date, view }: { date: Date; view: string }) => {
+    if (view !== 'month') return null;
+    
+    const dayEvents = getEventsForDate(date);
+    if (dayEvents.length === 0) return null;
+
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {dayEvents.slice(0, 3).map(event => {
+          const typeConfig = maintenanceTypes[event.type];
+          return (
+            <div
+              key={event.id}
+              className={`w-2 h-2 rounded-full ${typeConfig.color} cursor-pointer`}
+              title={`${event.title} - ${event.assetName}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEventClick(event);
+              }}
+            />
+          );
+        })}
+        {dayEvents.length > 3 && (
+          <div className="text-xs text-gray-500">+{dayEvents.length - 3}</div>
+        )}
+      </div>
+    );
+  }, [getEventsForDate, maintenanceTypes, onEventClick]);
+
+  // Custom tile class name for styling
+  const getTileClassName = useCallback(({ date, view }: { date: Date; view: string }) => {
+    if (view !== 'month') return '';
+    
+    const dayEvents = getEventsForDate(date);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    
+    let classes = '';
+    
+    if (isToday) {
+      classes += ' react-calendar__tile--today';
+    }
+    
+    if (dayEvents.length > 0) {
+      classes += ' react-calendar__tile--hasEvents';
+    }
+    
+    return classes;
+  }, [getEventsForDate]);
+
+  // Render event list for selected date
+  const renderSelectedDateEvents = useCallback(() => {
+    const dayEvents = getEventsForDate(selectedDate);
+    
+    if (dayEvents.length === 0) {
+      return (
+        <div className="text-center py-4 text-gray-500">
+          <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+          <p className="text-sm">No maintenance scheduled for this date</p>
+          <button
+            onClick={() => onScheduleNew(selectedDate)}
+            className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Schedule maintenance
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <h4 className="font-medium text-gray-900">
+          {selectedDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </h4>
+        {dayEvents.map(event => {
+          const typeConfig = maintenanceTypes[event.type];
+          return (
+            <div
+              key={event.id}
+              onClick={() => onEventClick(event)}
+              className={`p-3 rounded-lg cursor-pointer transition-all duration-150 hover:shadow-sm border ${typeConfig.lightColor} ${typeConfig.textColor} ${typeConfig.borderColor}`}
+            >
+              <div className="font-medium">{event.title}</div>
+              <div className="text-sm opacity-75">{event.assetName}</div>
+              <div className="text-xs mt-1">
+                {event.date.toLocaleTimeString('en-US', { 
+                  hour: 'numeric', 
+                  minute: '2-digit' 
+                })} • {event.estimatedDuration}h
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [selectedDate, getEventsForDate, onEventClick, onScheduleNew, maintenanceTypes]);
+
+  // Format date for native input
+  const formatDateForInput = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  // Handle native date input change
+  const handleNativeDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = new Date(e.target.value + 'T00:00:00');
+    setSelectedDate(newDate);
+    onDateClick(newDate);
+  };
+
+  // Render individual event
+  const renderEvent = useCallback((event: MaintenanceEvent, isCompact = false) => {
+    const typeConfig = maintenanceTypes[event.type];
+    
+    if (isCompact) {
+      return (
+        <div
+          key={event.id}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEventClick(event);
+          }}
+          className={`w-2 h-2 rounded-full ${typeConfig.color} cursor-pointer hover:scale-125 transition-transform duration-150`}
+          title={`${event.title} - ${event.assetName}`}
+        />
+      );
+    }
+
+    return (
+      <div
+        key={event.id}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+        }}
+        className={`text-xs p-1 mb-1 rounded cursor-pointer transition-all duration-150 hover:shadow-sm ${typeConfig.lightColor} ${typeConfig.textColor} ${typeConfig.borderColor} border`}
+      >
+        <div className="font-medium truncate">{event.title}</div>
+        <div className="text-xs opacity-75 truncate">{event.assetName}</div>
+      </div>
+    );
+  }, [onEventClick, maintenanceTypes]);
+
+  // Mobile day view
+  const renderMobileDay = useCallback((date: Date, dayEvents: MaintenanceEvent[]) => {
+    const isCurrentMonthDay = isCurrentMonth(date);
+    const isTodayDate = isToday(date);
+    const isPast = isPastDate(date);
+
+    return (
+      <div
+        key={date.toISOString()}
+        onClick={() => handleDateClick(date)}
+        className={`min-h-[80px] p-2 border-b border-gray-200 cursor-pointer transition-colors duration-150 ${
+          isTodayDate ? 'bg-blue-50' : 'hover:bg-gray-50'
+        } ${!isCurrentMonthDay ? 'opacity-50' : ''} ${isPast ? 'bg-gray-50' : ''}`}
+      >
+        <div className={`text-sm font-medium mb-2 ${
+          isTodayDate ? 'text-blue-600' : isCurrentMonthDay ? 'text-gray-900' : 'text-gray-400'
+        }`}>
+          {date.getDate()}
+          {isTodayDate && <span className="ml-1 text-xs">(Today)</span>}
+        </div>
+        
+        <div className="space-y-1">
+          {dayEvents.slice(0, 3).map(event => renderEvent(event))}
+          {dayEvents.length > 3 && (
+            <div className="text-xs text-gray-500">
+              +{dayEvents.length - 3} more
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
+
+  // Desktop calendar cell
+  const renderDesktopDay = useCallback((date: Date, dayEvents: MaintenanceEvent[]) => {
+    const isCurrentMonthDay = isCurrentMonth(date);
+    const isTodayDate = isToday(date);
+    const isPast = isPastDate(date);
+
+    return (
+      <div
+        key={date.toISOString()}
+        onClick={() => handleDateClick(date)}
+        className={`min-h-[120px] p-2 border border-gray-200 cursor-pointer transition-all duration-150 ${
+          isTodayDate ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'
+        } ${!isCurrentMonthDay ? 'opacity-50' : ''} ${isPast ? 'bg-gray-50' : ''}`}
+      >
+        <div className={`text-sm font-medium mb-2 ${
+          isTodayDate ? 'text-blue-600' : isCurrentMonthDay ? 'text-gray-900' : 'text-gray-400'
+        }`}>
+          {date.getDate()}
+        </div>
+        
+        <div className="space-y-1">
+          {dayEvents.slice(0, 2).map(event => renderEvent(event))}
+          {dayEvents.length > 2 && (
+            <div className="flex space-x-1">
+              {dayEvents.slice(2, 5).map(event => renderEvent(event, true))}
+              {dayEvents.length > 5 && (
+                <div className="text-xs text-gray-500">
+                  +{dayEvents.length - 5}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
+
+  const { years, months } = generateDateOptions;
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg">
+      {/* Calendar Header */}
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <CalendarIcon className="w-5 h-5 mr-2 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Maintenance Calendar</h2>
+          </div>
+          
+          {/* Quick Date Navigation */}
+          <div className="flex items-center space-x-2">
+            {/* Native Date Input for Mobile */}
+            {deviceType === 'mobile' && (
+              <input
+                type="date"
+                value={formatDateForInput(selectedDate)}
+                onChange={handleNativeDateChange}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
+              />
+            )}
+            
+            <button
+              onClick={goToToday}
+              className="px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors duration-200 min-h-[44px]"
+            >
+              Today
+            </button>
+            
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 min-h-[44px] flex items-center space-x-1"
+            >
+              <Eye className="w-4 h-4" />
+              <span>{showCalendar ? 'Hide' : 'Show'} Calendar</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-4 flex flex-wrap gap-3">
+          {Object.entries(maintenanceTypes).map(([type, config]) => (
+            <div key={type} className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded ${config.color}`}></div>
+              <span className="text-xs text-gray-600">{config.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Calendar Content */}
+      <div className="p-4 sm:p-6">
+        {deviceType === 'mobile' ? (
+          // Mobile: List view with native date picker
+          <div className="space-y-4">
+            {/* Date Selector */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Date
+              </label>
+              <input
+                type="date"
+                value={formatDateForInput(selectedDate)}
+                onChange={handleNativeDateChange}
+                className="w-full px-3 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
+              />
+            </div>
+            
+            {/* Events for Selected Date */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              {renderSelectedDateEvents()}
+            </div>
+          </div>
+        ) : (
+          // Desktop: Full calendar view
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Calendar */}
+            {showCalendar && (
+              <div className="lg:col-span-2">
+                <div className="calendar-container">
+                  <Calendar
+                    onChange={handleDateChange}
+                    value={selectedDate}
+                    tileContent={getTileContent}
+                    tileClassName={getTileClassName}
+                    className="react-calendar-custom"
+                    locale="en-US"
+                    calendarType="US"
+                    showNeighboringMonth={false}
+                    next2Label={null}
+                    prev2Label={null}
+                    formatShortWeekday={(locale, date) => 
+                      date.toLocaleDateString(locale, { weekday: 'short' })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Selected Date Events */}
+            <div className={showCalendar ? 'lg:col-span-1' : 'lg:col-span-3'}>
+              <div className="bg-gray-50 rounded-lg p-4">
+                {!showCalendar && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Jump to Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formatDateForInput(selectedDate)}
+                      onChange={handleNativeDateChange}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+                {renderSelectedDateEvents()}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Summary Stats */}
+      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <span>
+            {filteredEvents.length} maintenance event{filteredEvents.length !== 1 ? 's' : ''} this month
+          </span>
+          <div className="flex items-center space-x-4">
+            <span className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span>{filteredEvents.filter(e => e.status === 'overdue').length} overdue</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>{filteredEvents.filter(e => e.status === 'completed').length} completed</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const MaintenanceCalendarAlternate: React.FC<MaintenanceCalendarProps> = memo(({
+  events,
+  assets,
+  onEventClick,
+  onDateClick,
+  onScheduleNew,
+  selectedAssetFilter,
+  selectedTypeFilter
+}) => {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const deviceType = useDeviceType();
+
+  // Maintenance type configuration
+  const maintenanceTypes = {
+    preventive: { 
+      label: 'Preventive', 
+      color: 'bg-blue-500', 
+      lightColor: 'bg-blue-100', 
+      textColor: 'text-blue-800',
+      borderColor: 'border-blue-200'
+    },
+    corrective: { 
+      label: 'Corrective', 
+      color: 'bg-orange-500', 
+      lightColor: 'bg-orange-100', 
+      textColor: 'text-orange-800',
+      borderColor: 'border-orange-200'
+    },
+    emergency: { 
+      label: 'Emergency', 
+      color: 'bg-red-500', 
+      lightColor: 'bg-red-100', 
+      textColor: 'text-red-800',
+      borderColor: 'border-red-200'
+    },
+    inspection: { 
+      label: 'Inspection', 
+      color: 'bg-purple-500', 
+      lightColor: 'bg-purple-100', 
+      textColor: 'text-purple-800',
+      borderColor: 'border-purple-200'
+    },
+    calibration: { 
+      label: 'Calibration', 
+      color: 'bg-green-500', 
+      lightColor: 'bg-green-100', 
+      textColor: 'text-green-800',
+      borderColor: 'border-green-200'
+    }
+  };
+
+  // Filter events based on selected filters
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const assetMatch = !selectedAssetFilter || event.assetId === selectedAssetFilter;
+      const typeMatch = !selectedTypeFilter || event.type === selectedTypeFilter;
+      return assetMatch && typeMatch;
+    });
+  }, [events, selectedAssetFilter, selectedTypeFilter]);
+
+  // Get events for a specific date
+  const getEventsForDate = useCallback((date: Date) => {
+    return filteredEvents.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.toDateString() === date.toDateString();
+    });
+  }, [filteredEvents]);
+
+  // Generate calendar days
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+    
+    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+      days.push(new Date(date));
+    }
+    
+    return days;
+  }, [currentDate]);
+
+  // Date utility functions
+  const isCurrentMonth = useCallback((date: Date) => {
+    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
+  }, [currentDate]);
 
   const isToday = useCallback((date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
   }, []);
 
-  const isCurrentMonth = useCallback((date: Date) => {
-    return date.getMonth() === currentDate.getMonth();
-  }, [currentDate]);
-
   const isPastDate = useCallback((date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return date < today;
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  }, []);
+
+  // Navigation functions
+  const navigateToDate = useCallback((direction: 'prev' | 'next', unit: 'month' | 'year') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (unit === 'month') {
+        newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      } else {
+        newDate.setFullYear(prev.getFullYear() + (direction === 'next' ? 1 : -1));
+      }
+      return newDate;
+    });
+  }, []);
+
+  const goToMonth = useCallback((year: number, month: number) => {
+    setCurrentDate(new Date(year, month, 1));
+    setShowDatePicker(false);
+  }, []);
+
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+    setShowDatePicker(false);
+  }, []);
+
+  // Format month/year display
+  const formatMonthYear = useCallback((date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
+
+  // Generate date options for dropdown
+  const generateDateOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return { years, months };
   }, []);
 
   // Handle date click
   const handleDateClick = useCallback((date: Date) => {
+    setSelectedDate(date);
     onDateClick(date);
     
     // If no events on this date, offer to schedule new maintenance
     const dayEvents = getEventsForDate(date);
-    if (dayEvents.length === 0 && !isPastDate(date)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dayEvents.length === 0 && date >= today) {
       onScheduleNew(date);
     }
-  }, [onDateClick, onScheduleNew, getEventsForDate, isPastDate]);
+  }, [onDateClick, onScheduleNew, getEventsForDate]);
 
-  // Render event in calendar cell
+  // Render individual event
   const renderEvent = useCallback((event: MaintenanceEvent, isCompact = false) => {
     const typeConfig = maintenanceTypes[event.type];
     

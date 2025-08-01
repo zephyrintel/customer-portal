@@ -10,12 +10,14 @@ interface PartsEngagementCardProps {
   totalAssets: number;
   assetsWithNoPartsActivity: number;
   onViewOpportunities: () => void;
+  isLoading?: boolean;
 }
 
 const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
   totalAssets,
   assetsWithNoPartsActivity,
-  onViewOpportunities
+  onViewOpportunities,
+  isLoading = false
 }) => {
   const engagementPercentage = totalAssets > 0 
     ? Math.round(((totalAssets - assetsWithNoPartsActivity) / totalAssets) * 100) 
@@ -78,32 +80,36 @@ const PartsEngagementCard: React.FC<PartsEngagementCardProps> = ({
       action={{
         label: getButtonText(),
         onClick: onViewOpportunities,
-        variant: getButtonVariant()
+        variant: getButtonVariant(),
+        isLoading: isLoading
       }}
+      isLoading={isLoading}
     >
       {/* Consistent layout structure with fixed heights */}
       <div className="h-full flex flex-col justify-between">
-        {/* Metric Section - Fixed height: 96px */}
-        <div className="h-24 flex items-center justify-center">
+        {/* Metric Section - Fixed height: 80px */}
+        <div className="h-20 flex items-center justify-center">
           <MetricDisplay
             value={assetsWithNoPartsActivity}
             subtitle={`of ${totalAssets} assets with no parts history`}
             valueColor={getMetricColor()}
             cautionSymbol={getCautionSymbol()}
+            isLoading={isLoading}
           />
         </div>
         
-        {/* Progress Bar Section - Fixed height: 32px */}
-        <div className="h-8 flex items-center">
+        {/* Progress Bar Section - Fixed height: 24px */}
+        <div className="h-6 flex items-center">
           <ProgressBar
             percentage={engagementPercentage}
             color={getProgressColor() as any}
             showLabel={false}
+            isLoading={isLoading}
           />
         </div>
 
-        {/* Status Section - Fixed height: 48px */}
-        <div className="h-12 flex items-center justify-center">
+        {/* Status Section - Fixed height: 32px */}
+        <div className="h-8 flex items-center justify-center">
           {/* Empty space to maintain alignment with other cards */}
         </div>
       </div>

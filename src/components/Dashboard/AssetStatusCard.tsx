@@ -10,12 +10,14 @@ interface AssetStatusCardProps {
   totalAssets: number;
   assetsNotOperating: number;
   onUpdateAssets: () => void;
+  isLoading?: boolean;
 }
 
 const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
   totalAssets,
   assetsNotOperating,
-  onUpdateAssets
+  onUpdateAssets,
+  isLoading = false
 }) => {
   const operatingAssets = totalAssets - assetsNotOperating;
   const operatingPercentage = totalAssets > 0 ? Math.round((operatingAssets / totalAssets) * 100) : 0;
@@ -76,32 +78,36 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
       action={{
         label: getButtonText(),
         onClick: onUpdateAssets,
-        variant: getButtonVariant()
+        variant: getButtonVariant(),
+        isLoading: isLoading
       }}
+      isLoading={isLoading}
     >
       {/* Consistent layout structure with fixed heights */}
       <div className="h-full flex flex-col justify-between">
-        {/* Metric Section - Fixed height: 96px */}
-        <div className="h-24 flex items-center justify-center">
+        {/* Metric Section - Fixed height: 80px */}
+        <div className="h-20 flex items-center justify-center">
           <MetricDisplay
             value={assetsNotOperating}
             subtitle={`of ${totalAssets} assets not operating`}
             valueColor={getMetricColor()}
             cautionSymbol={getCautionSymbol()}
+            isLoading={isLoading}
           />
         </div>
         
-        {/* Progress Bar Section - Fixed height: 32px */}
-        <div className="h-8 flex items-center">
+        {/* Progress Bar Section - Fixed height: 24px */}
+        <div className="h-6 flex items-center">
           <ProgressBar
             percentage={operatingPercentage}
             color={getProgressColor() as any}
             label="Operational Rate"
+            isLoading={isLoading}
           />
         </div>
 
-        {/* Status Section - Fixed height: 48px */}
-        <div className="h-12 flex items-center justify-center">
+        {/* Status Section - Fixed height: 32px */}
+        <div className="h-8 flex items-center justify-center">
           {/* Empty space to maintain alignment with other cards */}
         </div>
       </div>

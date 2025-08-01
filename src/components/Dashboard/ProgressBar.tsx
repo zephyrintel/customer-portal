@@ -7,6 +7,7 @@ interface ProgressBarProps {
   showLabel?: boolean;
   label?: string;
   className?: string;
+  isLoading?: boolean;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -15,7 +16,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   size = 'md',
   showLabel = true,
   label = 'Progress',
-  className = ''
+  className = '',
+  isLoading = false
 }) => {
   const colorClasses = {
     blue: 'bg-blue-600',
@@ -31,17 +33,31 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     lg: 'h-4'
   };
 
+  if (isLoading) {
+    return (
+      <div className={`w-full ${className}`}>
+        {showLabel && (
+          <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+            <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+            <div className="h-3 bg-gray-200 rounded animate-pulse w-8"></div>
+          </div>
+        )}
+        <div className={`w-full bg-gray-200 rounded-full ${sizeClasses[size]} animate-pulse`}></div>
+      </div>
+    );
+  }
+
   return (
     <div className={`w-full ${className}`}>
       {showLabel && (
-        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+        <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
           <span className="truncate">{label}</span>
           <span className="ml-2 flex-shrink-0">{percentage}%</span>
         </div>
       )}
       <div className={`w-full bg-gray-200 rounded-full ${sizeClasses[size]}`}>
         <div 
-          className={`${sizeClasses[size]} rounded-full transition-all duration-500 ease-out ${colorClasses[color]}`}
+          className={`${sizeClasses[size]} rounded-full transition-all duration-700 ease-out ${colorClasses[color]}`}
           style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
         />
       </div>

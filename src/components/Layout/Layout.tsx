@@ -25,7 +25,7 @@ const Layout: React.FC = () => {
       )}
       
       <main className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
-        deviceType === 'desktop' && !sidebarCollapsed ? 'ml-64' : 'ml-0'
+        deviceType === 'desktop' && !sidebarCollapsed ? 'ml-56' : 'ml-0'
       } ${deviceType === 'mobile' ? 'pb-16' : ''}`}>
         <Outlet />
       </main>
