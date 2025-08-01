@@ -1,30 +1,16 @@
 import { useMemo } from 'react';
 import { Asset } from '../types/Asset';
 import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
-
-export interface MaintenanceItem {
-  id: string;
-  name: string;
-  status: string;
-  lastMaint: string | null;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  equipmentType: string;
-  location: string;
-  asset: Asset;
-  daysOverdue?: number;
-  nextDueDate?: Date;
-  maintenanceDetails: string;
-}
-
-export interface MaintenanceFilters {
-  priorityFilter: 'all' | 'critical' | 'high' | 'medium' | 'low';
-  searchTerm: string;
-}
+import {
+  MaintenanceItem,
+  MaintenanceFilters,
+  UseMaintenanceFilteringReturn
+} from '../types/Maintenance';
 
 export const useMaintenanceFiltering = (
   assets: Asset[],
   filters: MaintenanceFilters
-) => {
+): UseMaintenanceFilteringReturn => {
   // Memoize maintenance items generation
   const maintenanceItems = useMemo((): MaintenanceItem[] => {
     const items: MaintenanceItem[] = [];
@@ -118,7 +104,8 @@ export const useMaintenanceFiltering = (
   }, [maintenanceItems, filters.priorityFilter, filters.searchTerm]);
 
   return {
-    maintenanceItems,
+    maintenanceItems: filteredAndSortedItems, // Always return the filtered array as the main array
+    allMaintenanceItems: maintenanceItems, // Provide access to unfiltered items if needed
     filteredAndSortedItems
   };
 };

@@ -84,8 +84,17 @@ const AssetAssociationModal: React.FC<AssetAssociationModalProps> = ({
     }
   };
 
-  const handleAssetSelect = (assetId: string) => {
-    setSelectedAssetId(assetId);
+  const handleAssetSelect = (assetId: string, event: React.MouseEvent) => {
+    // Don't select if clicking with meta/ctrl/shift keys (for consistency with other tables)
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    
+    if (selectedAssetId === assetId) {
+      setSelectedAssetId(null);
+    } else {
+      setSelectedAssetId(assetId);
+    }
   };
 
   const handleRemoveAssociation = () => {
@@ -183,7 +192,7 @@ const AssetAssociationModal: React.FC<AssetAssociationModalProps> = ({
                     {filteredAssets.map((asset) => (
                       <div
                         key={asset.id}
-                        onClick={() => handleAssetSelect(asset.id)}
+                        onClick={(e) => handleAssetSelect(asset.id, e)}
                         className={`p-4 cursor-pointer transition-colors duration-150 hover:bg-gray-50 ${
                           selectedAssetId === asset.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                         }`}
@@ -238,7 +247,7 @@ const AssetAssociationModal: React.FC<AssetAssociationModalProps> = ({
             {/* General/Unassociated Option */}
             <div className="mb-6">
               <div
-                onClick={() => handleAssetSelect('GENERAL')}
+                onClick={(e) => handleAssetSelect('GENERAL', e)}
                 className={`p-4 border border-gray-200 rounded-lg cursor-pointer transition-colors duration-150 hover:bg-gray-50 ${
                   selectedAssetId === 'GENERAL' ? 'bg-blue-50 border-blue-500' : ''
                 }`}

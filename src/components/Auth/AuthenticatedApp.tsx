@@ -5,6 +5,7 @@ import DashboardPage from '../../pages/DashboardPage';
 import AssetsPage from '../../pages/AssetsPage';
 import MaintenancePage from '../../pages/MaintenancePage';
 import PartsOrderPage from '../../pages/PartsOrderPage';
+import DocumentationPage from '../../pages/DocumentationPage';
 import AssetDetail from '../AssetDetail';
 import NotificationsPage from '../Notifications/NotificationsPage';
 import { useAuth } from '../../hooks/useAuth';
@@ -32,7 +33,7 @@ const AuthenticatedApp: React.FC = () => {
           <Route path="assets/:id" element={<AssetDetail />} />
           <Route path="maintenance" element={<MaintenancePage />} />
           <Route path="orders" element={<PartsOrderPage />} />
-          <Route path="documentation" element={<div className="p-8"><h1 className="text-2xl font-bold">Documentation Page</h1><p>Coming soon...</p></div>} />
+          <Route path="documentation" element={<DocumentationPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="activity" element={<div className="p-8"><h1 className="text-2xl font-bold">Activity Page</h1><p>Coming soon...</p></div>} />
         </Route>

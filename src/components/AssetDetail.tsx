@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
+import { Asset, Documentation, DocumentType } from '../types/Asset';
+import { getStatusBadge } from '../utils/badgeUtils';
+import {
   ArrowLeft, 
   Edit3, 
   MapPin, 
@@ -20,7 +22,6 @@ import {
   X
 } from 'lucide-react';
 import { getMockAssets } from '../data/mockData';
-import { Asset, Documentation, DocumentType } from '../types/Asset';
 import WearComponentCard from './WearComponents/WearComponentCard';
 import DocumentItem from './Documentation/DocumentItem';
 import DocumentUpload from './Documentation/DocumentUpload';
@@ -81,24 +82,6 @@ const AssetDetail: React.FC = () => {
     );
   }
 
-  const getStatusBadge = (status: Asset['currentStatus']) => {
-    const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium";
-    
-    switch (status) {
-      case 'In Operation':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case 'Intermittent Operation':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
-      case 'Not Commissioned':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'Not In Use':
-        return `${baseClasses} bg-red-100 text-red-800`;
-      case 'Unknown':
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-    }
-  };
 
   const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
     switch (type) {

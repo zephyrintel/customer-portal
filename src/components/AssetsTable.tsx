@@ -1,8 +1,17 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { useDeviceType, useTouch } from '../hooks/useTouch';
+import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
+import { 
+  getStatusBadge, 
+  getCriticalityBadge, 
+  getMaintenanceBadge, 
+  getRowStateClasses, 
+  getCardStateClasses 
+} from '../utils/badgeUtils';
 import VirtualList from './VirtualList/VirtualList';
+import { HorizontalScrollIndicators, useHorizontalScrollIndicators } from './ScrollIndicators';
 import {
   Zap,
   Droplets,
@@ -10,9 +19,7 @@ import {
   Wrench,
   Flame,
   Cylinder,
-  Settings,
-  ChevronLeft,
-  ChevronRight
+  Settings
 } from 'lucide-react';
 
 interface AssetsTableProps {
@@ -38,28 +45,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const deviceType = useDeviceType();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [showLeftScroll, setShowLeftScroll] = useState(false);
-  const [showRightScroll, setShowRightScroll] = useState(false);
-
-  // Check scroll position to show/hide scroll indicators
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftScroll(scrollLeft > 0);
-      setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  };
-
-  // Initialize scroll indicators on mount and when assets change
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      handleScroll();
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [assets]);
+  const { scrollContainerRef, showLeftScroll, showRightScroll } = useHorizontalScrollIndicators([assets]);
 
   const handleRowClick = (assetId: string, event: React.MouseEvent) => {
     // Don't navigate if clicking on checkbox or if selection is enabled and shift/ctrl is pressed
@@ -98,41 +84,6 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
     });
   };
 
-  const getStatusBadge = (status: Asset['currentStatus']) => {
-    const baseClasses = "px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide";
-    
-    switch (status) {
-      case 'In Operation':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case 'Intermittent Operation':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
-      case 'Not Commissioned':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'Not In Use':
-        return `${baseClasses} bg-red-100 text-red-800`;
-      case 'Unknown':
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-    }
-  };
-
-  const getCriticalityBadge = (criticality: Asset['criticalityLevel']) => {
-    const baseClasses = "px-2 py-1 rounded text-xs font-medium";
-    
-    switch (criticality) {
-      case 'Critical':
-        return `${baseClasses} bg-red-100 text-red-800`;
-      case 'High':
-        return `${baseClasses} bg-orange-100 text-orange-800`;
-      case 'Medium':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'Low':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-    }
-  };
 
 const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
   switch (type) {
@@ -158,11 +109,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
     <div
       key={asset.id}
       onClick={(e) => handleRowClick(asset.id, e)}
-      className={`p-4 bg-white border border-gray-200 rounded-lg mb-3 transition-all duration-150 ease-in-out active:bg-gray-50 ${
-        selectedIds.has(asset.id) 
-          ? 'ring-2 ring-blue-500 border-blue-300' 
-          : 'hover:shadow-md'
-      }`}
+      className={`p-4 bg-white border border-gray-200 rounded-lg mb-3 ${getCardStateClasses(selectedIds.has(asset.id), showSelection)}`}
     >
       {showSelection && (
         <div className="flex items-center mb-3">
@@ -193,6 +140,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
         </span>
       </div>
       
+      {/* 4-grid layout: Serial, Location, Priority badge, Last Maintenance date & overdue indicator */}
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <span className="font-medium text-gray-700">Serial:</span>
@@ -200,18 +148,32 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
         </div>
         <div>
           <span className="font-medium text-gray-700">Location:</span>
-          <p className="text-gray-900 text-xs mt-1">{asset.location.facility}</p>
+          <div className="text-gray-900 text-xs mt-1">
+            <div>{asset.location.facility}</div>
+            <div className="text-gray-500">{asset.location.area}</div>
+          </div>
         </div>
         <div>
-          <span className="font-medium text-gray-700">Install Date:</span>
-          <p className="text-gray-900 text-xs mt-1">{formatDate(asset.installDate)}</p>
-        </div>
-        <div>
-          <span className="font-medium text-gray-700">Status:</span>
+          <span className="font-medium text-gray-700">Priority:</span>
           <div className="mt-1">
-            <span className={getStatusBadge(asset.currentStatus)}>
-              {asset.currentStatus}
+            <span className={getCriticalityBadge(asset.criticalityLevel)}>
+              {asset.criticalityLevel}
             </span>
+          </div>
+        </div>
+        <div>
+          <span className="font-medium text-gray-700">Last Maintenance:</span>
+          <div className="mt-1">
+            <p className="text-gray-900 text-xs">{formatDate(asset.lastMaintenance)}</p>
+            {(() => {
+              const maintenanceStatus = getAssetMaintenanceStatus(asset);
+              const isOverdue = maintenanceStatus.overdueCount > 0;
+              return (
+                <span className={`${getMaintenanceBadge(isOverdue)} mt-1`}>
+                  {isOverdue ? 'Overdue' : 'On Track'}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -232,19 +194,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
       </div>
       
 <div className="relative">
-        {/* Left scroll indicator */}
-        {showLeftScroll && (
-          <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-r from-white via-white to-transparent pl-2 pr-8 pointer-events-none">
-            <ChevronLeft className="text-gray-600 w-5 h-5" />
-          </div>
-        )}
-        
-        {/* Right scroll indicator */}
-        {showRightScroll && (
-          <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-l from-white via-white to-transparent pr-2 pl-8 pointer-events-none">
-            <ChevronRight className="text-gray-600 w-5 h-5" />
-          </div>
-        )}
+        <HorizontalScrollIndicators showLeftScroll={showLeftScroll} showRightScroll={showRightScroll} />
         
         <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '800px' }}>
@@ -267,6 +217,9 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
               <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20" style={{ minWidth: '250px' }}>
                 Equipment
               </th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
+                Serial / Model
+              </th>
               <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>
                 Location
               </th>
@@ -283,11 +236,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
               <tr
                 key={asset.id}
                 onClick={(e) => handleRowClick(asset.id, e)}
-                className={`transition-colors duration-150 ease-in-out cursor-pointer min-h-[60px] ${
-                  selectedIds.has(asset.id) 
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'hover:bg-gray-50 active:bg-gray-100'
-                }`}
+                className={`${getRowStateClasses(selectedIds.has(asset.id), showSelection)} min-h-[60px]`}
               >
                 {showSelection && (
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -311,6 +260,14 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                         {asset.brand} • {asset.equipmentType}
                       </div>
                     </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 font-mono">
+                    {asset.serialNumber}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {asset.modelCode}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -406,18 +363,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
       </div>
       
       <div className="relative">
-        {/* Desktop scroll indicators */}
-        {showLeftScroll && (
-          <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-r from-white via-white to-transparent pl-2 pr-8 pointer-events-none">
-            <ChevronLeft className="text-gray-600 w-5 h-5" />
-          </div>
-        )}
-        
-        {showRightScroll && (
-          <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-l from-white via-white to-transparent pr-2 pl-8 pointer-events-none">
-            <ChevronRight className="text-gray-600 w-5 h-5" />
-          </div>
-        )}
+        <HorizontalScrollIndicators showLeftScroll={showLeftScroll} showRightScroll={showRightScroll} />
         
         <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
@@ -462,11 +408,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
               <tr
                 key={asset.id}
                 onClick={(e) => handleRowClick(asset.id, e)}
-                className={`transition-colors duration-150 ease-in-out ${
-                  selectedIds.has(asset.id) 
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'hover:bg-gray-50'
-                } ${showSelection ? 'cursor-pointer' : 'cursor-pointer'}`}
+                className={getRowStateClasses(selectedIds.has(asset.id), showSelection)}
               >
                 {showSelection && (
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -78,3 +78,101 @@ export function hasMaintenanceDue(asset: Asset, withinDays: number = 30): boolea
   const { hasMaintenanceDue } = getAssetMaintenanceStatus(asset);
   return hasMaintenanceDue;
 }
+
+/**
+ * UI Helper functions for maintenance display
+ */
+
+import React from 'react';
+import { 
+  AlertTriangle, 
+  Clock, 
+  CheckCircle, 
+  Droplets,
+  Wind,
+  Wrench,
+  Zap,
+  Flame,
+  Cylinder,
+  Settings
+} from 'lucide-react';
+
+export type MaintenancePriority = 'critical' | 'high' | 'medium' | 'low';
+export type EquipmentType = 'Pump' | 'Compressor' | 'Valve' | 'Motor' | 'Heat Exchanger' | 'Tank';
+export type EquipmentStatus = 'In Operation' | 'Intermittent Operation' | 'Not Commissioned' | 'Not In Use' | 'Unknown';
+
+/**
+ * Get priority icon component
+ */
+export function getPriorityIcon(priority: MaintenancePriority): React.ReactNode {
+  switch (priority) {
+    case 'critical':
+      return React.createElement(AlertTriangle, { className: "w-4 h-4 text-red-600" });
+    case 'high':
+      return React.createElement(AlertTriangle, { className: "w-4 h-4 text-orange-600" });
+    case 'medium':
+      return React.createElement(Clock, { className: "w-4 h-4 text-yellow-600" });
+    case 'low':
+      return React.createElement(CheckCircle, { className: "w-4 h-4 text-green-600" });
+  }
+}
+
+/**
+ * Get priority color classes
+ */
+export function getPriorityColor(priority: MaintenancePriority): string {
+  switch (priority) {
+    case 'critical':
+      return 'bg-red-100 text-red-800';
+    case 'high':
+      return 'bg-orange-100 text-orange-800';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'low':
+      return 'bg-green-100 text-green-800';
+  }
+}
+
+/**
+ * Get status badge classes
+ */
+export function getStatusBadgeClasses(status: EquipmentStatus): string {
+  const baseClasses = "px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide";
+  
+  switch (status) {
+    case 'In Operation':
+      return `${baseClasses} bg-green-100 text-green-800`;
+    case 'Intermittent Operation':
+      return `${baseClasses} bg-blue-100 text-blue-800`;
+    case 'Not Commissioned':
+      return `${baseClasses} bg-yellow-100 text-yellow-800`;
+    case 'Not In Use':
+      return `${baseClasses} bg-red-100 text-red-800`;
+    case 'Unknown':
+      return `${baseClasses} bg-gray-100 text-gray-800`;
+    default:
+      return `${baseClasses} bg-gray-100 text-gray-800`;
+  }
+}
+
+/**
+ * Get equipment type icon component
+ */
+export function getEquipmentTypeIcon(equipmentType: string): React.ReactNode {
+  switch (equipmentType) {
+    case 'Pump':
+      return React.createElement(Droplets);
+    case 'Compressor':
+      return React.createElement(Wind);
+    case 'Valve':
+      return React.createElement(Wrench);
+    case 'Motor':
+      return React.createElement(Zap);
+    case 'Heat Exchanger':
+      return React.createElement(Flame);
+    case 'Tank':
+      return React.createElement(Cylinder);
+    default:
+      return React.createElement(Settings);
+  }
+}

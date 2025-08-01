@@ -61,6 +61,32 @@ export interface Documentation {
   uploadDate: string;
   fileSize?: number;
   tags?: string[];
+  assignedAssets?: string[]; // Asset IDs this document is assigned to
+}
+
+export interface TechnicalBulletin {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  type: 'equipment_change' | 'safety_update' | 'maintenance_alert' | 'recall' | 'general';
+  publishDate: string;
+  expiryDate?: string;
+  isRead: boolean;
+  affectedAssets?: string[]; // Asset IDs or asset types affected
+  affectedEquipmentTypes?: EquipmentType[];
+  vendorInfo: {
+    company: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  };
+  attachments?: {
+    id: string;
+    name: string;
+    url: string;
+    fileSize?: number;
+  }[];
+  tags?: string[];
 }
 
 export interface BillOfMaterialsItem {

@@ -1,18 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  UseVirtualListProps,
+  UseVirtualListReturn,
+  VirtualListItem
+} from '../types/Maintenance';
 
-interface UseVirtualListProps {
-  items: any[];
-  itemHeight: number;
-  containerHeight: number;
-  overscan?: number;
-}
-
-export const useVirtualList = ({
+export const useVirtualList = <T = any>({
   items,
   itemHeight,
   containerHeight,
-  overscan = 5
-}: UseVirtualListProps) => {
+  overscan = 5,
+  keySelector = (item: any) => item.id || String(items.indexOf(item))
+}: UseVirtualListProps<T>): UseVirtualListReturn<T> => {
   const [scrollTop, setScrollTop] = useState(0);
 
   const visibleRange = useMemo(() => {
@@ -35,9 +34,13 @@ export const useVirtualList = ({
   const visibleItems = useMemo(() => {
     return items.slice(visibleRange.startIndex, visibleRange.endIndex).map((item, index) => ({
       item,
-      index: visibleRange.startIndex + index
+      index: visibleRange.startIndex + index,
+      key: keySelector(item)
     }));
-  }, [items, visibleRange.startIndex, visibleRange.endIndex]);
+  }, [items, visibleRange.startIndex, visibleRange.endIndex, keySelector]);
+
+  // Return the full items array for compatibility with selection hooks
+  const allItems = useMemo(() => items, [items]);
 
   const totalHeight = items.length * itemHeight;
 
@@ -47,6 +50,7 @@ export const useVirtualList = ({
 
   return {
     visibleItems,
+    allItems,
     totalHeight,
     offsetY: visibleRange.offsetY,
     handleScroll
