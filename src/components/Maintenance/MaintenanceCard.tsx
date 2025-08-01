@@ -1,5 +1,17 @@
 import React, { memo } from 'react';
-import { AlertTriangle, Clock, CheckCircle, Package, MapPin } from 'lucide-react';
+import { 
+  AlertTriangle, 
+  Clock, 
+  CheckCircle, 
+  MapPin,
+  Droplets,
+  Wind,
+  Wrench,
+  Zap,
+  Flame,
+  Cylinder,
+  Settings
+} from 'lucide-react';
 import { MaintenanceItem } from '../../hooks/useMaintenanceFiltering';
 import { useSwipeGestures } from '../../hooks/useSwipeGestures';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
@@ -89,19 +101,19 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = memo(({
   const getEquipmentTypeIcon = () => {
     switch (item.equipmentType) {
       case 'Pump':
-        return '🔄';
+        return <Droplets />;
       case 'Compressor':
-        return '💨';
+        return <Wind />;
       case 'Valve':
-        return '🔧';
+        return <Wrench />;
       case 'Motor':
-        return '⚡';
+        return <Zap />;
       case 'Heat Exchanger':
-        return '🔥';
+        return <Flame />;
       case 'Tank':
-        return '🛢️';
+        return <Cylinder />;
       default:
-        return '⚙️';
+        return <Settings />;
     }
   };
 
@@ -123,86 +135,8 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = memo(({
     onRowClick(item.id, event);
   };
 
-  // Mobile card view
-  if (deviceType === 'mobile') {
-    return (
-      <div
-        {...swipeHandlers}
-        onClick={handleCardClick}
-        className={`p-4 bg-white border border-gray-200 rounded-lg mb-3 transition-all duration-150 ease-in-out active:bg-gray-50 cursor-pointer relative overflow-hidden ${
-          isSelected ? 'ring-2 ring-blue-500 border-blue-300' : 'hover:shadow-md'
-        }`}
-      >
-        {/* Swipe indicators */}
-        <div className="absolute inset-y-0 left-0 w-16 bg-green-500 flex items-center justify-center opacity-0 transition-opacity duration-200">
-          <CheckCircle className="w-6 h-6 text-white" />
-        </div>
-        <div className="absolute inset-y-0 right-0 w-16 bg-blue-500 flex items-center justify-center opacity-0 transition-opacity duration-200">
-          <Clock className="w-6 h-6 text-white" />
-        </div>
 
-        {showSelection && (
-          <div className="flex items-center mb-3">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={handleCheckboxClick}
-              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label={`Select ${item.name}`}
-            />
-          </div>
-        )}
-        
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <span className="text-2xl flex-shrink-0">{getEquipmentTypeIcon()}</span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-gray-900 truncate">
-                {item.name}
-              </h3>
-              <div className="flex items-center space-x-2 mt-1">
-                <MapPin className="w-3 h-3 text-gray-400" />
-                <p className="text-sm text-gray-500 truncate">{item.location}</p>
-              </div>
-            </div>
-          </div>
-          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor()}`}>
-            {getPriorityIcon()}
-            <span className="ml-1 capitalize">{item.priority}</span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-          <div>
-            <span className="font-medium text-gray-700">Type:</span>
-            <p className="text-gray-900 text-xs mt-1">{item.equipmentType}</p>
-          </div>
-          <div>
-            <span className="font-medium text-gray-700">Last Maintenance:</span>
-            <p className="text-gray-900 text-xs mt-1">{formatMaintenanceDate(item.lastMaint)}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className={getStatusBadge()}>
-            {item.status}
-          </span>
-          {item.daysOverdue && (
-            <div className="text-xs text-red-600 font-medium">
-              {item.daysOverdue} days overdue
-            </div>
-          )}
-        </div>
-
-        {/* Swipe hint */}
-        <div className="mt-2 text-xs text-gray-400 text-center">
-          ← Swipe to complete • Swipe to reschedule →
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop/tablet row view
+  // Unified table row view for all devices
   return (
     <tr 
       onClick={handleCardClick}

@@ -13,7 +13,7 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 relative">
+    <div className="flex h-screen bg-gray-50">
       {/* Desktop Sidebar */}
       {deviceType === 'desktop' && (
         <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
@@ -25,9 +25,11 @@ const Layout: React.FC = () => {
       )}
       
       <main className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
-        deviceType === 'desktop' && !sidebarCollapsed ? 'ml-56' : 'ml-0'
-      } ${deviceType === 'mobile' ? 'pb-16' : ''}`}>
-        <Outlet />
+        deviceType === 'mobile' ? 'pb-16' : ''
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

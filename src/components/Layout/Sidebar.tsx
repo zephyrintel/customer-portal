@@ -119,7 +119,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <Link
               key={item.id}
               to={item.path}
-              className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group min-h-[44px] ${
+              title={isCollapsed ? item.label : undefined}
+              className={`relative flex items-center rounded-lg text-sm font-medium transition-all duration-200 group min-h-[44px] ${
+                isCollapsed 
+                  ? 'justify-center p-2.5' 
+                  : 'space-x-3 px-3 py-2.5'
+              } ${
                 active
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -145,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               )}
               
               {isCollapsed && item.badge && (
-                <div className="absolute left-8 w-2 h-2 bg-red-500 rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
               )}
             </Link>
           );
@@ -153,14 +158,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       </nav>
 
       {/* User Profile Section */}
-      <div className="p-4 border-t border-gray-200">
-        {!isCollapsed ? (
-          <UserProfile />
-        ) : (
-          <div className="flex justify-center">
-            <UserProfile />
-          </div>
-        )}
+      <div className="p-4 border-t border-gray-200 mt-auto">
+        <UserProfile isCollapsed={isCollapsed} />
       </div>
     </div>
   );

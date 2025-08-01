@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { User, Mail, Building, Phone, LogOut, ChevronDown, Settings } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-const UserProfile: React.FC = () => {
+interface UserProfileProps {
+  isCollapsed?: boolean;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ isCollapsed = false }) => {
   const { user, logout, isLoading } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+
+  // Calculate dropdown position when showing
+  useEffect(() => {
+    if (showDropdown && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.top - 320, // Position above the button (dropdown height ~300px + margin)
+        left: isCollapsed ? rect.right + 8 : rect.left,
+        width: 320
+      });
+    }
+  }, [showDropdown, isCollapsed]);
   
   // Check if using development bypass
   const isDevBypass = sessionStorage.getItem('dev_bypass_auth') === 'true';
@@ -40,146 +59,163 @@ const UserProfile: React.FC = () => {
     <div className="relative">
       {/* Profile Button */}
       <button
+        ref={buttonRef}
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]"
+        className={`flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] w-full ${
+          isCollapsed ? 'justify-center' : 'space-x-3'
+        }`}
       >
         <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
           {getInitials(user.displayName)}
         </div>
-        <div className="hidden sm:block text-left">
-          <p className="text-sm font-medium text-gray-900 truncate max-w-[150px]">
-            {user.displayName}
-          </p>
-          <p className="text-xs text-gray-500 truncate max-w-[150px]">
-            {user.mail}
-          </p>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-          showDropdown ? 'rotate-180' : ''
-        }`} />
+        {!isCollapsed && (
+          <>
+            <div className="text-left flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.displayName}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {user.mail}
+              </p>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 flex-shrink-0 ${
+              showDropdown ? 'rotate-180' : ''
+            }`} />
+          </>
+        )}
       </button>
 
       {/* Dropdown Menu */}
       {showDropdown && (
         <>
           <div 
-            className="fixed inset-0 z-10" 
+            className="fixed inset-0 z-40" 
             onClick={() => setShowDropdown(false)}
           />
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-            {/* User Info Header */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-medium">
-                  {getInitials(user.displayName)}
-                  {isDevBypass && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-white">D</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">
-                    {user.displayName}
+          {createPortal(
+            <div 
+              className="fixed bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+              style={{
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`
+              }}
+            >
+              {/* User Info Header */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-medium">
+                    {getInitials(user.displayName)}
                     {isDevBypass && (
-                      <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">
-                        DEV
-                      </span>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-white">D</span>
+                      </div>
                     )}
-                  </h3>
-                  <p className="text-xs text-gray-500 truncate">
-                    {user.mail}
-                  </p>
-                  {user.jobTitle && (
-                    <p className="text-xs text-gray-400 truncate">
-                      {user.jobTitle}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {user.displayName}
+                      {isDevBypass && (
+                        <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">
+                          DEV
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.mail}
                     </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* User Details */}
-            <div className="p-4 space-y-3">
-              <div className="flex items-center space-x-3 text-sm">
-                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-gray-600 text-xs">Email</p>
-                  <p className="text-gray-900 truncate">{user.mail}</p>
+                    {user.jobTitle && (
+                      <p className="text-xs text-gray-400 truncate">
+                        {user.jobTitle}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {user.department && (
+              {/* User Details */}
+              <div className="p-4 space-y-3">
                 <div className="flex items-center space-x-3 text-sm">
-                  <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-gray-600 text-xs">Department</p>
-                    <p className="text-gray-900 truncate">{user.department}</p>
+                    <p className="text-gray-600 text-xs">Email</p>
+                    <p className="text-gray-900 truncate">{user.mail}</p>
                   </div>
                 </div>
-              )}
 
-              {user.businessPhones && user.businessPhones.length > 0 && (
-                <div className="flex items-center space-x-3 text-sm">
-                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-gray-600 text-xs">Phone</p>
-                    <p className="text-gray-900 truncate">{user.businessPhones[0]}</p>
+                {user.department && (
+                  <div className="flex items-center space-x-3 text-sm">
+                    <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-gray-600 text-xs">Department</p>
+                      <p className="text-gray-900 truncate">{user.department}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {user.companyName && (
-                <div className="flex items-center space-x-3 text-sm">
-                  <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-gray-600 text-xs">Company</p>
-                    <p className="text-gray-900 truncate">{user.companyName}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="border-t border-gray-200 p-2">
-              {isDevBypass && (
-                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-xs text-yellow-800 text-center">
-                    🔧 Development Mode Active
-                  </p>
-                </div>
-              )}
-              
-              <button
-                onClick={() => {
-                  setShowDropdown(false);
-                  // TODO: Add settings navigation
-                }}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 min-h-[40px]"
-              >
-                <Settings className="w-4 h-4 text-gray-400" />
-                <span>Account Settings</span>
-              </button>
-              
-              <button
-                onClick={handleLogout}
-                disabled={isLoading}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                    <span>Signing out...</span>
-                  </>
-                ) : (
-                  <>
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign out</span>
-                  </>
                 )}
-              </button>
-            </div>
-          </div>
+
+                {user.businessPhones && user.businessPhones.length > 0 && (
+                  <div className="flex items-center space-x-3 text-sm">
+                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-gray-600 text-xs">Phone</p>
+                      <p className="text-gray-900 truncate">{user.businessPhones[0]}</p>
+                    </div>
+                  </div>
+                )}
+
+                {user.companyName && (
+                  <div className="flex items-center space-x-3 text-sm">
+                    <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-gray-600 text-xs">Company</p>
+                      <p className="text-gray-900 truncate">{user.companyName}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-gray-200 p-2">
+                {isDevBypass && (
+                  <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-xs text-yellow-800 text-center">
+                      🔧 Development Mode Active
+                    </p>
+                  </div>
+                )}
+                
+                <button
+                  onClick={() => {
+                    setShowDropdown(false);
+                    // TODO: Add settings navigation
+                  }}
+                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 min-h-[40px]"
+                >
+                  <Settings className="w-4 h-4 text-gray-400" />
+                  <span>Account Settings</span>
+                </button>
+                
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoading}
+                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Signing out...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign out</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>,
+            document.body
+          )}
         </>
       )}
     </div>
