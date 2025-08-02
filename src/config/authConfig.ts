@@ -2,7 +2,7 @@ import { Configuration, PopupRequest, RedirectRequest } from '@azure/msal-browse
 
 // Detect environment
 const isProduction = window.location.hostname === 'early-access.zephyrintel.com';
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+// const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Dynamic redirect URI based on environment
 const getRedirectUri = (): string => {

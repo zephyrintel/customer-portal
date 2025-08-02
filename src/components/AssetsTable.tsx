@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
-import { useDeviceType, useTouch } from '../hooks/useTouch';
+import { useDeviceType } from '../hooks/useTouch';
 import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
 import { 
   getStatusBadge, 
@@ -105,7 +105,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
 };
 
   // Mobile card view for better touch interaction
-  const renderMobileCard = (asset: Asset, index: number) => (
+  const renderMobileCard = (asset: Asset) => (
     <div
       key={asset.id}
       onClick={(e) => handleRowClick(asset.id, e)}
@@ -116,7 +116,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
           <input
             type="checkbox"
             checked={selectedIds.has(asset.id)}
-            onChange={(e) => handleCheckboxClick(asset.id, e as any)}
+            onChange={(e) => handleCheckboxClick(asset.id, e)}
             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             aria-label={`Select ${asset.name}`}
           />
@@ -243,7 +243,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     <input
                       type="checkbox"
                       checked={selectedIds.has(asset.id)}
-                      onChange={(e) => handleCheckboxClick(asset.id, e as any)}
+                      onChange={(e) => handleCheckboxClick(asset.id, e)}
                       className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       aria-label={`Select ${asset.name}`}
                     />
@@ -340,7 +340,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
             />
           ) : (
             <div className="space-y-3">
-              {assets.map((asset, index) => renderMobileCard(asset, index))}
+              {assets.map((asset) => renderMobileCard(asset))}
             </div>
           )}
         </div>
@@ -415,7 +415,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     <input
                       type="checkbox"
                       checked={selectedIds.has(asset.id)}
-                      onChange={(e) => handleCheckboxClick(asset.id, e as any)}
+                      onChange={(e) => handleCheckboxClick(asset.id, e)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       aria-label={`Select ${asset.name}`}
                     />

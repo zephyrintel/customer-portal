@@ -8,16 +8,13 @@ import {
   MapPin, 
   Gauge, 
   Calendar, 
-  User, 
   Hash, 
   AlertCircle, 
   Settings, 
   Package, 
   Wrench,
-  FileText,
   AlertTriangle,
   CheckCircle,
-  Upload,
   Plus,
   X
 } from 'lucide-react';
@@ -45,7 +42,7 @@ const AssetDetail: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isAssetEditLoading, setIsAssetEditLoading] = useState(false);
   const [asset, setAsset] = useState<Asset | undefined>();
-  const [isRefreshingStock, setIsRefreshingStock] = useState<Set<string>>(new Set());
+  const [, setIsRefreshingStock] = useState<Set<string>>(new Set());
   
   // Find the asset from mock data
   React.useEffect(() => {
@@ -306,7 +303,7 @@ const AssetDetail: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'

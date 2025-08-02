@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Loader2, AlertCircle, Building2, Users, Lock, ExternalLink, CheckCircle } from 'lucide-react';
+import { Shield, Loader2, AlertCircle, Building2, Users, Lock, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 // Development bypass - only works in development environment

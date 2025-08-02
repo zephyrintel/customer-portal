@@ -110,7 +110,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
     }
   };
 
-  const renderMobileCard = (item: MaintenanceItem, index: number) => (
+  const renderMobileCard = (item: MaintenanceItem) => (
     <div
       key={item.id}
       onClick={(e) => handleRowClick(item.id, e)}
@@ -125,7 +125,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
           <input
             type="checkbox"
             checked={selectedIds.has(item.id)}
-            onChange={(e) => handleCheckboxClick(item.id, e as any)}
+            onChange={(e) => handleCheckboxClick(item.id, e)}
             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             aria-label={`Select ${item.name}`}
           />
@@ -238,7 +238,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                       <input
                         type="checkbox"
                         checked={selectedIds.has(item.id)}
-                        onChange={(e) => handleCheckboxClick(item.id, e as any)}
+                        onChange={(e) => handleCheckboxClick(item.id, e)}
                         className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         aria-label={`Select ${item.name}`}
                       />
@@ -323,7 +323,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
             />
           ) : (
             <div className="space-y-3">
-              {items.map((item, index) => renderMobileCard(item, index))}
+              {items.map((item) => renderMobileCard(item))}
             </div>
           )}
         </div>
@@ -404,7 +404,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                       <input
                         type="checkbox"
                         checked={selectedIds.has(item.id)}
-                        onChange={(e) => handleCheckboxClick(item.id, e as any)}
+                        onChange={(e) => handleCheckboxClick(item.id, e)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         aria-label={`Select ${item.name}`}
                       />

@@ -31,7 +31,7 @@ export const useMaintenanceFiltering = (
       const today = new Date();
       let hasOverdueMaintenance = false;
       let hasDueSoonMaintenance = false;
-      let maxOverdueDays = 0;
+      const maxOverdueDays = 0;
       let earliestDueDate: Date | undefined;
 
       const maintenanceStatus = getAssetMaintenanceStatus(asset);
@@ -84,7 +84,7 @@ export const useMaintenanceFiltering = (
 
   // Memoize filtered and sorted items
   const filteredAndSortedItems = useMemo(() => {
-    let filtered = maintenanceItems.filter(item => {
+    const filtered = maintenanceItems.filter(item => {
       const matchesPriority = filters.priorityFilter === 'all' || item.priority === filters.priorityFilter;
       const matchesSearch = filters.searchTerm === '' || 
         item.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
