@@ -1,5 +1,9 @@
 # Customer Portal
 
+## Documentation
+
+- **[Branching Workflow Guide](docs/branching-workflow.md)** - Comprehensive guide to our Git branching strategy, including branch purpose diagrams, step-by-step cheat sheets, CI/pre-commit setup, FAQ, and rollback procedures.
+
 ## Components
 
 ### MaintenanceListTable

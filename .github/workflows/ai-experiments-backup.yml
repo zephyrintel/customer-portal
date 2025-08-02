@@ -1,0 +1,147 @@
+name: AI Experiments Branch Backup
+
+on:
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  backup-ai-experiments:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history and branches
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
+    
+    - name: Fetch all branches and remotes
+      run: |
+        git fetch --all --prune
+        echo "Fetched all branches and remotes"
+    
+    - name: List ai-experiments branches
+      id: list-branches
+      run: |
+        # Get all ai-experiments branches (both local and remote)
+        AI_BRANCHES=$(git branch -a | grep -E '(^|\s+)(remotes/origin/)?ai-experiments/' | sed 's|^\s*remotes/origin/||' | sed 's|^\s*||' | sort -u)
+        echo "Found ai-experiments branches:"
+        echo "$AI_BRANCHES"
+        
+        # Convert to JSON array for matrix strategy
+        if [ -n "$AI_BRANCHES" ]; then
+          BRANCHES_JSON=$(echo "$AI_BRANCHES" | jq -R -s -c 'split("\n")[:-1]')
+          echo "branches=$BRANCHES_JSON" >> $GITHUB_OUTPUT
+        else
+          echo "branches=[]" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create backup tags
+      if: steps.list-branches.outputs.branches != '[]'
+      run: |
+        BACKUP_DATE=$(date +%Y-%m-%d)
+        BRANCHES='${{ steps.list-branches.outputs.branches }}'
+        
+        echo "Creating backup tags for date: $BACKUP_DATE"
+        
+        # Parse JSON array and create tags for each branch
+        echo "$BRANCHES" | jq -r '.[]' | while read -r branch; do
+          if [ -n "$branch" ]; then
+            echo "Processing branch: $branch"
+            
+            # Ensure we have the latest version of the branch
+            git fetch origin "$branch:$branch" 2>/dev/null || git checkout -b "$branch" "origin/$branch" 2>/dev/null || true
+            
+            # Create backup tag
+            BACKUP_TAG="backup/${BACKUP_DATE}-${branch}"
+            echo "Creating tag: $BACKUP_TAG for branch: $branch"
+            
+            # Create the tag pointing to the branch head
+            git tag "$BACKUP_TAG" "origin/$branch" || git tag "$BACKUP_TAG" "$branch" || {
+              echo "Warning: Could not create tag $BACKUP_TAG for branch $branch"
+              continue
+            }
+            
+            echo "Successfully created tag: $BACKUP_TAG"
+          fi
+        done
+    
+    - name: Push backup tags to origin
+      if: steps.list-branches.outputs.branches != '[]'
+      run: |
+        # Push all backup tags
+        BACKUP_DATE=$(date +%Y-%m-%d)
+        git push origin --tags --force-with-lease || {
+          echo "Failed to push some tags, attempting individual push..."
+          git tag | grep "^backup/${BACKUP_DATE}-" | while read -r tag; do
+            git push origin "$tag" || echo "Warning: Failed to push tag $tag"
+          done
+        }
+        echo "Backup tags pushed to origin"
+    
+    - name: Mirror to ai-backups remote (Optional)
+      if: steps.list-branches.outputs.branches != '[]'
+      continue-on-error: true
+      run: |
+        # This step is optional and will only run if AI_BACKUPS_REPO_URL secret is set
+        if [ -n "${{ secrets.AI_BACKUPS_REPO_URL }}" ]; then
+          echo "Setting up ai-backups remote..."
+          git remote add ai-backups "${{ secrets.AI_BACKUPS_REPO_URL }}" || git remote set-url ai-backups "${{ secrets.AI_BACKUPS_REPO_URL }}"
+          
+          # Push backup tags to the backup repository
+          BACKUP_DATE=$(date +%Y-%m-%d)
+          git push ai-backups --tags || {
+            echo "Failed to push all tags to ai-backups, attempting individual push..."
+            git tag | grep "^backup/${BACKUP_DATE}-" | while read -r tag; do
+              git push ai-backups "$tag" || echo "Warning: Failed to push tag $tag to ai-backups"
+            done
+          }
+          echo "Backup tags mirrored to ai-backups repository"
+        else
+          echo "AI_BACKUPS_REPO_URL secret not set, skipping mirror to separate repository"
+        fi
+    
+    - name: Clean up old backup tags (Optional)
+      if: steps.list-branches.outputs.branches != '[]'
+      run: |
+        # Keep backups for 30 days, remove older ones
+        CUTOFF_DATE=$(date -d '30 days ago' +%Y-%m-%d 2>/dev/null || date -v -30d +%Y-%m-%d 2>/dev/null || echo "2000-01-01")
+        echo "Cleaning up backup tags older than: $CUTOFF_DATE"
+        
+        git tag | grep '^backup/' | while read -r tag; do
+          # Extract date from tag name (format: backup/YYYY-MM-DD-branch)
+          TAG_DATE=$(echo "$tag" | sed -n 's/^backup\/\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)-.*/\1/p')
+          
+          if [ -n "$TAG_DATE" ] && [ "$TAG_DATE" \< "$CUTOFF_DATE" ]; then
+            echo "Deleting old backup tag: $tag (date: $TAG_DATE)"
+            git tag -d "$tag"
+            git push origin --delete "$tag" 2>/dev/null || echo "Warning: Could not delete remote tag $tag"
+            
+            # Also delete from ai-backups if configured
+            if [ -n "${{ secrets.AI_BACKUPS_REPO_URL }}" ]; then
+              git push ai-backups --delete "$tag" 2>/dev/null || echo "Warning: Could not delete tag $tag from ai-backups"
+            fi
+          fi
+        done
+    
+    - name: Summary
+      if: always()
+      run: |
+        echo "=== Backup Summary ==="
+        BACKUP_DATE=$(date +%Y-%m-%d)
+        BACKUP_TAGS=$(git tag | grep "^backup/${BACKUP_DATE}-" | wc -l)
+        echo "Created $BACKUP_TAGS backup tags for date: $BACKUP_DATE"
+        
+        if [ "$BACKUP_TAGS" -gt 0 ]; then
+          echo "Backup tags created:"
+          git tag | grep "^backup/${BACKUP_DATE}-"
+        else
+          echo "No ai-experiments branches found or no backup tags were created"
+        fi
