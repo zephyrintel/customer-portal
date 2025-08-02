@@ -4,6 +4,7 @@ import Layout from '../Layout/Layout';
 import DashboardPage from '../../pages/DashboardPage';
 import AssetsPage from '../../pages/AssetsPage';
 import MaintenancePage from '../../pages/MaintenancePage';
+import MaintenancePageV2 from '../../pages/MaintenancePageV2';
 import PartsOrderPage from '../../pages/PartsOrderPage';
 import DocumentationPage from '../../pages/DocumentationPage';
 import AssetDetail from '../AssetDetail';
@@ -32,6 +33,7 @@ const AuthenticatedApp: React.FC = () => {
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/:id" element={<AssetDetail />} />
           <Route path="maintenance" element={<MaintenancePage />} />
+          <Route path="maintenance-v2" element={<MaintenancePageV2 />} />
           <Route path="orders" element={<PartsOrderPage />} />
           <Route path="documentation" element={<DocumentationPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
