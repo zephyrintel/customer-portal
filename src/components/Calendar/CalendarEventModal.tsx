@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, User, Clock, AlertCircle, CheckCircle, Settings, MapPin, Edit3, Trash2, Save, Package, Plus, Minus } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 
@@ -163,6 +163,26 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
   const handleRemoveRequiredPart = (partNumber: string) => {
     setRequiredParts(prev => prev.filter(p => p !== partNumber));
   };
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isEditing) {
+          setIsEditing(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isOpen, isEditing, onClose]);
 
   if (!isOpen || !event) return null;
 

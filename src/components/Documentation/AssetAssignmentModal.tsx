@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { X, Search, Package, CheckCircle, Circle, Target, Zap } from 'lucide-react';
 import { Documentation, Asset, EquipmentType } from '../../types/Asset';
 
@@ -87,6 +87,20 @@ const AssetAssignmentModal: React.FC<AssetAssignmentModalProps> = ({
     setDropTargetAssetId(null);
   }, [document.id, handleAssetToggle]);
 
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [onClose]);
+
   const getEquipmentIcon = (type: EquipmentType) => {
     switch (type) {
       case 'Pump':
@@ -107,8 +121,14 @@ const AssetAssignmentModal: React.FC<AssetAssignmentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>

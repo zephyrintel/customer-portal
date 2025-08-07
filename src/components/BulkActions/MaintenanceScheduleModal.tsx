@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 import { MaintenanceScheduleData } from '../../hooks/useBulkOperations';
@@ -58,6 +58,22 @@ const MaintenanceScheduleModal: React.FC<MaintenanceScheduleModalProps> = ({
     setConflicts([]);
     onClose();
   };
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

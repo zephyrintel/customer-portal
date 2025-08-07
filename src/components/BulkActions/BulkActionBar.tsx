@@ -3,6 +3,7 @@ import { X, Calendar, Package, Download, Tag, Archive, ChevronDown } from 'lucid
 import { Asset } from '../../types/Asset';
 import { BulkOperationState } from '../../hooks/useBulkOperations';
 import { useDeviceType } from '../../hooks/useTouch';
+import { ORDER_PARTS_ENABLED, ADD_TAGS_ENABLED } from '../../constants/featureFlags';
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -96,16 +97,18 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                 {deviceType === 'mobile' ? 'Schedule' : 'Schedule Maintenance'}
               </button>
 
-              <button
-                onClick={onOrderParts}
-                disabled={isLoading}
-                className={`inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                  deviceType === 'mobile' ? 'min-h-[44px] flex-1' : ''
-                }`}
-              >
-                <Package className="w-4 h-4 mr-2" />
-                {deviceType === 'mobile' ? 'Order' : 'Order Parts'}
-              </button>
+              {ORDER_PARTS_ENABLED && (
+                <button
+                  onClick={onOrderParts}
+                  disabled={isLoading}
+                  className={`inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    deviceType === 'mobile' ? 'min-h-[44px] flex-1' : ''
+                  }`}
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  {deviceType === 'mobile' ? 'Order' : 'Order Parts'}
+                </button>
+              )}
 
               {/* Export Dropdown */}
               <div className="relative">
@@ -160,23 +163,25 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
 
               {deviceType !== 'mobile' && (
                 <>
-                  <button
-                onClick={onAddTags}
-                disabled={isLoading}
-                className="inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-              >
-                <Tag className="w-4 h-4 mr-2" />
-                Add Tags
-              </button>
+                  {ADD_TAGS_ENABLED && (
+                    <button
+                      onClick={onAddTags}
+                      disabled={isLoading}
+                      className="inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    >
+                      <Tag className="w-4 h-4 mr-2" />
+                      Add Tags
+                    </button>
+                  )}
 
-              <button
-                onClick={onArchive}
-                disabled={isLoading}
-                className="inline-flex items-center px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                <Archive className="w-4 h-4 mr-2" />
-                Archive
-              </button>
+                  <button
+                    onClick={onArchive}
+                    disabled={isLoading}
+                    className="inline-flex items-center px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    Archive
+                  </button>
                 </>
               )}
             </div>

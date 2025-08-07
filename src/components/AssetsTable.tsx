@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { useDeviceType } from '../hooks/useTouch';
@@ -19,7 +19,8 @@ import {
   Wrench,
   Flame,
   Cylinder,
-  Settings
+  Settings,
+  Check
 } from 'lucide-react';
 
 interface AssetsTableProps {
@@ -46,11 +47,12 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
   const navigate = useNavigate();
   const deviceType = useDeviceType();
   const { scrollContainerRef, showLeftScroll, showRightScroll } = useHorizontalScrollIndicators([assets]);
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   const handleRowClick = (assetId: string, event: React.MouseEvent) => {
-    // Don't navigate if clicking on checkbox or if selection is enabled and shift/ctrl is pressed
+    // Don't navigate if clicking on selection toggle or if selection is enabled and shift/ctrl is pressed
     if (
-      (event.target as HTMLElement).closest('input[type="checkbox"]') ||
+      (event.target as HTMLElement).closest('.selection-toggle') ||
       (showSelection && (event.shiftKey || event.ctrlKey || event.metaKey))
     ) {
       return;
@@ -369,8 +371,8 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
         <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
           <thead className="bg-gray-50">
             <tr>
-              {showSelection && (
-                <th className="px-6 py-3 text-left">
+              <th className="px-3 py-3 text-left w-12">
+                <div className="w-8 h-8 flex items-center justify-center">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
@@ -381,8 +383,8 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     aria-label="Select all assets"
                   />
-                </th>
-              )}
+                </div>
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200" style={{ minWidth: '250px' }}>
                 Equipment
               </th>
@@ -408,20 +410,30 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
               <tr
                 key={asset.id}
                 onClick={(e) => handleRowClick(asset.id, e)}
-                className={getRowStateClasses(selectedIds.has(asset.id), showSelection)}
+                className={`${getRowStateClasses(selectedIds.has(asset.id), showSelection).replace('hover:bg-blue-50', 'hover:bg-gray-50')}`}
               >
-                {showSelection && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(asset.id)}
-                      onChange={(e) => handleCheckboxClick(asset.id, e)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      aria-label={`Select ${asset.name}`}
-                    />
-                  </td>
-                )}
-                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
+                <td 
+                  className="px-3 py-4 whitespace-nowrap w-12 relative"
+                  onMouseEnter={() => setHoveredRowId(asset.id)}
+                  onMouseLeave={() => setHoveredRowId(null)}
+                >
+                  <div 
+                    className="selection-toggle w-8 h-8 flex items-center justify-center cursor-pointer rounded-full hover:bg-gray-100"
+                    onClick={(e) => handleCheckboxClick(asset.id, e)}
+                    aria-label={`Select ${asset.name}`}
+                  >
+                    {selectedIds.has(asset.id) ? (
+                      <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    ) : hoveredRowId === asset.id ? (
+                      <div className="w-5 h-5 border-2 border-gray-400 rounded hover:border-blue-600" />
+                    ) : (
+                      <div className="w-5 h-5" />
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap sticky left-0 z-10 border-r border-gray-200 bg-inherit">
                   <div className="flex items-center">
                     <span className="text-lg mr-3">{getEquipmentTypeIcon(asset.equipmentType)}</span>
                     <div className="flex flex-col">

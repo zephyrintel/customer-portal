@@ -42,7 +42,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ isCollapsed, onTogg
       id: 'maintenance', 
       label: 'Maintenance', 
       icon: Wrench, 
-      path: '/maintenance',
+      path: '/maintenance-v2',
       badge: '3'
     },
     { 

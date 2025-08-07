@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -13,7 +13,8 @@ import {
   User,
   Download,
   Eye,
-  Bell
+  Bell,
+  X
 } from 'lucide-react';
 import DocumentItem from '../components/Documentation/DocumentItem';
 import DocumentUpload from '../components/Documentation/DocumentUpload';
@@ -185,6 +186,25 @@ const DocumentationPage: React.FC = () => {
         : bulletin
     ));
   };
+
+  // Handle escape key to close modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showUpload) {
+          setShowUpload(false);
+        }
+        if (showAssignment) {
+          setShowAssignment(null);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showUpload, showAssignment]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -400,15 +420,22 @@ const DocumentationPage: React.FC = () => {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowUpload(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Upload Documentation</h2>
               <button
                 onClick={() => setShowUpload(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 rounded-lg p-1"
+                aria-label="Close modal"
               >
-                <Settings className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6">

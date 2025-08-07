@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, Search, Package, MapPin, CheckCircle, Link } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 import { getMockAssets } from '../../data/mockData';
@@ -100,6 +100,22 @@ const AssetAssociationModal: React.FC<AssetAssociationModalProps> = ({
   const handleRemoveAssociation = () => {
     setSelectedAssetId(null);
   };
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

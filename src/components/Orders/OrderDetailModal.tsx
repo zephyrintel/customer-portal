@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   X, 
   Package, 
@@ -32,6 +32,26 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 }) => {
   const [showAssetAssociation, setShowAssetAssociation] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showAssetAssociation) {
+          setShowAssetAssociation(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isOpen, showAssetAssociation, onClose]);
 
   if (!isOpen || !order) return null;
 

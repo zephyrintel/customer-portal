@@ -76,9 +76,9 @@ export const getMaintenanceBadge = (isOverdue: boolean) => {
   return `${SMALL_BADGE_CLASSES} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100`;
 };
 
-// Row selection and hover state classes
+// Row selection and hover state classes - optimized for snappy interactions
 export const getRowStateClasses = (isSelected: boolean, showSelection: boolean) => {
-  const baseClasses = "transition-colors duration-150 ease-in-out cursor-pointer";
+  const baseClasses = "cursor-pointer";
   
   if (isSelected) {
     return `${baseClasses} bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700`;

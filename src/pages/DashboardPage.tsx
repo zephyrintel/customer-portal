@@ -73,7 +73,7 @@ const DashboardPage: React.FC = () => {
       title: 'Set Up Maintenance Schedules',
       description: 'Configure preventive maintenance schedules for critical equipment',
       completed: true,
-      action: () => navigate('/maintenance')
+      action: () => navigate('/maintenance-v2')
     },
     {
       id: 'notifications',
@@ -87,7 +87,7 @@ const DashboardPage: React.FC = () => {
   // Navigation handlers - centralized for reusability
   const navigationHandlers = {
     viewEquipment: () => navigate('/assets'),
-    scheduleMaintenance: () => navigate('/maintenance?action=schedule'),
+    scheduleMaintenance: () => navigate('/maintenance-v2?action=schedule'),
     updateAssets: () => {
       // Filter to show assets that are not in operation (Not In Use + Not Commissioned + Unknown)
       navigate('/assets?search=not in use OR not commissioned OR unknown');
@@ -100,7 +100,7 @@ const DashboardPage: React.FC = () => {
     viewOrders: () => navigate('/orders'),
     viewDocumentation: () => navigate('/documentation'),
     viewActivity: () => navigate('/activity'),
-    setupPrevention: () => navigate('/maintenance?tab=preventive')
+    setupPrevention: () => navigate('/maintenance-v2?tab=preventive')
   };
 
   return (
@@ -187,7 +187,6 @@ const DashboardPage: React.FC = () => {
                 label: "View Orders",
                 onClick: navigationHandlers.viewOrders
               }}
-              isLoading={isLoading}
               isLoading={isLoading}
             />
           ) : (

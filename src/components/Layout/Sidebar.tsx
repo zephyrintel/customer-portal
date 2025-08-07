@@ -42,18 +42,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       badge: null
     },
     { 
-      id: 'maintenance', 
+      id: 'maintenance-v2', 
       label: 'Maintenance', 
       icon: Wrench, 
-      path: '/maintenance',
-      badge: '3'
-    },
-    { 
-      id: 'maintenance-v2', 
-      label: 'Maintenance V2', 
-      icon: Wrench, 
       path: '/maintenance-v2',
-      badge: 'NEW'
+      badge: '3'
     },
     { 
       id: 'orders', 
