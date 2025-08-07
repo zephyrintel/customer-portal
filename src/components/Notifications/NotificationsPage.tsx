@@ -3,17 +3,7 @@ import {
   Bell,
   Plus,
   Settings,
-  BarChart3,
-  Mail,
-  MessageSquare,
   Clock,
-  CheckCircle,
-  XCircle,
-  Play,
-  Pause,
-  Edit,
-  Trash2,
-  Filter,
   Search
 } from 'lucide-react';
 import { NotificationRule, NotificationStats, NotificationHistory } from '../../types/Notification';

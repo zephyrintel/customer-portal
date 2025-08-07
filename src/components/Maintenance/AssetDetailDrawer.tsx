@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, MapPin, Gauge, Calendar, User, Hash, AlertCircle, Settings, Wrench, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Package, MapPin, Gauge, Calendar, Hash, Settings, Wrench, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import { getMockAssets } from '../../data/mockData';
 import { Asset } from '../../types/Asset';
 import WearComponentCard from '../WearComponents/WearComponentCard';

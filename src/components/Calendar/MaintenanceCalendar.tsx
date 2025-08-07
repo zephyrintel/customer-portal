@@ -1,5 +1,5 @@
 import React, { useState, useMemo, memo, useCallback } from 'react';
-import { Calendar as CalendarIcon, Plus, Filter, Eye, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Eye, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Asset } from '../../types/Asset';

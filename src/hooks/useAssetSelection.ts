@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Asset } from '../types/Asset';
 import {
   SelectionState,
   SelectableItem,

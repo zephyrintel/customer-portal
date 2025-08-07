@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Mail, Building, Phone, LogOut, ChevronDown, Settings } from 'lucide-react';
+import { Mail, Building, Phone, LogOut, ChevronDown, Settings } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 interface UserProfileProps {

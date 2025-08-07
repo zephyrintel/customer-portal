@@ -5,7 +5,6 @@ import {
   Target, 
   Zap, 
   CheckCircle, 
-  AlertCircle,
   Move,
   ArrowRight
 } from 'lucide-react';

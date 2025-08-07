@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Wrench, 
   Search, 
-  Filter, 
   AlertTriangle, 
   Clock, 
   CheckCircle2, 
@@ -11,11 +10,8 @@ import {
   Settings,
   TrendingUp,
   Eye,
-  MoreHorizontal,
   Plus,
-  Download,
-  RefreshCw
-} from 'lucide-react';
+  Download} from 'lucide-react';
 
 // Hooks
 import { getMockAssets } from '../data/mockData';
@@ -33,7 +29,6 @@ import NotificationToast from '../components/BulkActions/NotificationToast';
 import MaintenanceSkeletonLoader from '../components/Maintenance/MaintenanceSkeletonLoader';
 
 // Utils
-import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
 import { getPriorityBadge, PRIORITY_COLOR_MAP } from '../utils/badgeUtils';
 
 // Types

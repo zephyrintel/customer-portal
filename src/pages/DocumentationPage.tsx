@@ -1,18 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
-  Filter, 
   Upload, 
   BookOpen, 
-  AlertTriangle, 
   FileText, 
-  Settings,
-  Plus,
   Tag,
-  Calendar,
-  User,
-  Download,
-  Eye,
   Bell,
   X
 } from 'lucide-react';
@@ -20,7 +12,7 @@ import DocumentItem from '../components/Documentation/DocumentItem';
 import DocumentUpload from '../components/Documentation/DocumentUpload';
 import TechnicalBulletinCard from '../components/Documentation/TechnicalBulletinCard';
 import AssetAssignmentModal from '../components/Documentation/AssetAssignmentModal';
-import { Documentation, TechnicalBulletin, Asset, DocumentType } from '../types/Asset';
+import { Documentation, TechnicalBulletin, DocumentType } from '../types/Asset';
 import { mockAssets } from '../data/mockData';
 
 // Mock data for documentation and technical bulletins

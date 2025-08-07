@@ -1,9 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   UseVirtualListProps,
-  UseVirtualListReturn,
-  VirtualListItem
-} from '../types/Maintenance';
+  UseVirtualListReturn} from '../types/Maintenance';
 
 export const useVirtualList = <T = any>({
   items,

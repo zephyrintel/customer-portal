@@ -3,8 +3,6 @@
  */
 
 import { WearComponent, Asset } from '../types/Asset';
-import { daysBetween } from './dateUtils';
-
 export interface MaintenanceStatus {
   status: 'overdue' | 'due-soon' | 'good' | 'unknown';
   daysUntilDue: number | null;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Download, File, FileSpreadsheet, AlertCircle, Edit3, Trash2, Tag } from 'lucide-react';
+import { FileText, Download, File, FileSpreadsheet, Edit3, Trash2, Tag } from 'lucide-react';
 import { Documentation } from '../../types/Asset';
 
 interface DocumentItemProps {

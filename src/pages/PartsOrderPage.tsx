@@ -9,8 +9,6 @@ import {
   AlertCircle,
   Package,
   Calendar,
-  DollarSign,
-  Filter,
   X
 } from 'lucide-react';
 import { getMockOrders } from '../data/mockData';

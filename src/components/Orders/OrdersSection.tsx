@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ShoppingCart, Package, Calendar, DollarSign, Truck, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react';
+import { ShoppingCart, Package, Calendar, Truck, CheckCircle, Clock, AlertCircle, Plus} from 'lucide-react';
 import { getMockOrders } from '../../data/mockData';
 import { Order } from '../../types/Asset';
 import ManualOrderModal from './ManualOrderModal';

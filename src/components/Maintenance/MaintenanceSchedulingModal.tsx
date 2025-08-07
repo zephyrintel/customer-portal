@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Calendar, User, Wrench, AlertCircle, Save, Package } from 'lucide-react';
+import { X, Wrench, AlertCircle, Save, Package } from 'lucide-react';
 import { Asset } from '../../types/Asset';
 
 interface MaintenanceSchedulingModalProps {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, AlertTriangle, CheckCircle, Eye, Power } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Power } from 'lucide-react';
 import BaseCard from './BaseCard';
 import MetricDisplay from './MetricDisplay';
 import ProgressBar from './ProgressBar';

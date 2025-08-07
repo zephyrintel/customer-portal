@@ -10,7 +10,6 @@ import {
   DollarSign,
   User,
   MapPin,
-  Link,
   Edit3
 } from 'lucide-react';
 import { Order } from '../../types/Asset';
