@@ -136,6 +136,8 @@ export interface Asset {
   // Dates
   installDate: string | null;
   lastMaintenance: string | null;
+  lastInspection?: string | null; // Newly added: track last inspection date
+  
   
   // Location
   location: {

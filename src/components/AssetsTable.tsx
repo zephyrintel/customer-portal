@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { useDeviceType } from '../hooks/useTouch';
-import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
+import { getAssetMaintenanceStatus, calculateMaintenanceStatus } from '../utils/maintenanceUtils';
 import { 
   getStatusBadge, 
   getCriticalityBadge, 
   getMaintenanceBadge, 
+  getMaintenanceStatusBadge,
   getRowStateClasses, 
   getCardStateClasses 
 } from '../utils/badgeUtils';
@@ -32,6 +33,9 @@ interface AssetsTableProps {
   isAllSelected?: boolean;
   isIndeterminate?: boolean;
   showSelection?: boolean;
+  // Inline maintenance actions
+  onInlineScheduleMaintenance?: (asset: Asset) => void;
+  onInlineLogInspection?: (asset: Asset) => void;
 }
 
 const AssetsTable: React.FC<AssetsTableProps> = ({ 
@@ -42,7 +46,9 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
   onClearSelection,
   isAllSelected = false,
   isIndeterminate = false,
-  showSelection = false
+  showSelection = false,
+  onInlineScheduleMaintenance,
+  onInlineLogInspection
 }) => {
   const navigate = useNavigate();
   const deviceType = useDeviceType();
@@ -142,7 +148,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
         </span>
       </div>
       
-      {/* 4-grid layout: Serial, Location, Priority badge, Last Maintenance date & overdue indicator */}
+      {/* Grid layout: Serial, Location, Priority, Last Inspection, Maintenance */}
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <span className="font-medium text-gray-700">Serial:</span>
@@ -164,18 +170,33 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
           </div>
         </div>
         <div>
-          <span className="font-medium text-gray-700">Last Maintenance:</span>
-          <div className="mt-1">
-            <p className="text-gray-900 text-xs">{formatDate(asset.lastMaintenance)}</p>
+          <span className="font-medium text-gray-700">Last Inspection:</span>
+          <div className="mt-1 text-xs text-gray-900">{formatDate(asset.lastInspection ?? null)}</div>
+        </div>
+        <div className="col-span-2">
+          <span className="font-medium text-gray-700">Maintenance:</span>
+          <div className="mt-1 flex items-center space-x-2">
             {(() => {
-              const maintenanceStatus = getAssetMaintenanceStatus(asset);
-              const isOverdue = maintenanceStatus.overdueCount > 0;
+              const { overdueCount, dueSoonCount } = getAssetMaintenanceStatus(asset);
+              const status = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
               return (
-                <span className={`${getMaintenanceBadge(isOverdue)} mt-1`}>
-                  {isOverdue ? 'Overdue' : 'On Track'}
+                <span className={getMaintenanceStatusBadge(status as any)}>
+                  {status === 'overdue' ? 'Overdue' : status === 'due-soon' ? 'Due Soon' : 'Good'}
                 </span>
               );
             })()}
+            <button
+              className="text-xs text-blue-600 hover:underline"
+              onClick={(e) => { e.stopPropagation(); onInlineScheduleMaintenance?.(asset); }}
+            >
+              Schedule
+            </button>
+            <button
+              className="text-xs text-gray-600 hover:underline"
+              onClick={(e) => { e.stopPropagation(); onInlineLogInspection?.(asset); }}
+            >
+              Log Inspection
+            </button>
           </div>
         </div>
       </div>
@@ -216,16 +237,22 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                   />
                 </th>
               )}
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20" style={{ minWidth: '250px' }}>
+              cth className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200" style={{ minWidth: '250px', boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}
                 Equipment
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
+              c/th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
                 Serial / Model
               </th>
               <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>
                 Location
               </th>
               <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
+                Last Inspection
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
+                Maintenance
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                 Status
               </th>
               <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '120px' }}>
@@ -251,7 +278,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     />
                   </td>
                 )}
-                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
+                ctd className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200" style={{ boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}
                   <div className="flex items-center">
                     <span className="text-xl mr-3">{getEquipmentTypeIcon(asset.equipmentType)}</span>
                     <div className="flex flex-col">
@@ -281,6 +308,34 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                       {asset.location.area}
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatDate(asset.lastInspection ?? null)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {(() => {
+                    const { overdueCount, dueSoonCount } = getAssetMaintenanceStatus(asset);
+                    const status = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
+                    return (
+                      <div className="flex items-center space-x-2">
+                        <span className={getMaintenanceStatusBadge(status as any)}>
+                          {status === 'overdue' ? 'Overdue' : status === 'due-soon' ? 'Due Soon' : 'Good'}
+                        </span>
+                        <button
+                          className="text-xs text-blue-600 hover:underline"
+                          onClick={(e) => { e.stopPropagation(); onInlineScheduleMaintenance?.(asset); }}
+                        >
+                          Schedule
+                        </button>
+                        <button
+                          className="text-xs text-gray-600 hover:underline"
+                          onClick={(e) => { e.stopPropagation(); onInlineLogInspection?.(asset); }}
+                        >
+                          Log
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={getStatusBadge(asset.currentStatus)}>
@@ -385,17 +440,20 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                   />
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200" style={{ minWidth: '250px' }}>
+              cth className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200" style={{ minWidth: '250px', boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}
                 Equipment
-              </th>
+              c/th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
                 Serial Number
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>
                 Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '120px' }}>
-                Install Date
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
+                Last Inspection
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
+                Maintenance
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
                 Status
@@ -433,7 +491,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap sticky left-0 z-10 border-r border-gray-200 bg-inherit">
+                ctd className="px-6 py-4 whitespace-nowrap sticky left-0 z-10 border-r border-gray-200 bg-white" style={{ boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}
                   <div className="flex items-center">
                     <span className="text-lg mr-3">{getEquipmentTypeIcon(asset.equipmentType)}</span>
                     <div className="flex flex-col">
@@ -465,7 +523,32 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(asset.installDate)}
+                  {formatDate(asset.lastInspection ?? null)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {(() => {
+                    const { overdueCount, dueSoonCount } = getAssetMaintenanceStatus(asset);
+                    const status = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
+                    return (
+                      <div className="flex items-center space-x-2">
+                        <span className={getMaintenanceStatusBadge(status as any)}>
+                          {status === 'overdue' ? 'Overdue' : status === 'due-soon' ? 'Due Soon' : 'Good'}
+                        </span>
+                        <button
+                          className="text-xs text-blue-600 hover:underline"
+                          onClick={(e) => { e.stopPropagation(); onInlineScheduleMaintenance?.(asset); }}
+                        >
+                          Schedule
+                        </button>
+                        <button
+                          className="text-xs text-gray-600 hover:underline"
+                          onClick={(e) => { e.stopPropagation(); onInlineLogInspection?.(asset); }}
+                        >
+                          Log
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={getStatusBadge(asset.currentStatus)}>

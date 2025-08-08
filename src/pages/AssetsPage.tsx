@@ -41,6 +41,16 @@ const AssetsPage: React.FC = () => {
     getSuggestedBulkActions
   } = useAssetSearch(assets);
 
+  // Equipment type filter UI state
+  const [equipmentTypeFilter, setEquipmentTypeFilter] = useState<null | 'Pump' | 'Compressor' | 'Valve' | 'Motor' | 'Heat Exchanger' | 'Tank'>(null);
+  const displayedAssets = useMemo(() => {
+    if (!equipmentTypeFilter) return filteredAssets;
+    return filteredAssets.filter(a => a.equipmentType === equipmentTypeFilter);
+  }, [filteredAssets, equipmentTypeFilter]);
+
+  // Inline maintenance single-asset override for modal
+  const [inlineMaintenanceAssets, setInlineMaintenanceAssets] = useState<null | typeof selectedAssets>(null);
+
   const {
     selectedIds,
     selectedAssets,
@@ -108,12 +118,27 @@ const AssetsPage: React.FC = () => {
 
   // Bulk operation handlers
   const handleScheduleMaintenance = () => {
+    setInlineMaintenanceAssets(null); // use current selection
     setShowMaintenanceModal(true);
   };
 
+  // Inline actions
+  const handleInlineScheduleMaintenance = (asset: any) => {
+    setInlineMaintenanceAssets([asset]);
+    setShowMaintenanceModal(true);
+  };
+
+  const handleInlineLogInspection = (asset: any) => {
+    // For now, just add a system note to simulate logging an inspection
+    console.log('Log inspection for asset', asset.id);
+    // In a full implementation, this could open an inspection modal
+  };
+
   const handleMaintenanceSchedule = async (scheduleData: any) => {
-    await scheduleMaintenance(selectedAssets, scheduleData);
+    const targets = inlineMaintenanceAssets ?? selectedAssets;
+    await scheduleMaintenance(targets, scheduleData);
     setShowMaintenanceModal(false);
+    setInlineMaintenanceAssets(null);
     clearSelection();
   };
 
@@ -320,6 +345,23 @@ const AssetsPage: React.FC = () => {
           />
         </div>
 
+        {/* Equipment Type Filters */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {['All','Pump','Compressor','Valve','Motor','Heat Exchanger','Tank'].map((type) => (
+            <button
+              key={type}
+              className={`px-3 py-1 rounded-full text-sm border ${
+                (type === 'All' && !equipmentTypeFilter) || equipmentTypeFilter === type
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              onClick={() => setEquipmentTypeFilter(type === 'All' ? null : (type as any))}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+
         {/* Search Results Info */}
         <SearchResults
           resultCount={resultCount}
@@ -339,9 +381,9 @@ const AssetsPage: React.FC = () => {
               : 'mb-20' 
             : 'mb-0'
         }`}>
-          {filteredAssets.length > 0 ? (
+          {displayedAssets.length > 0 ? (
             <AssetsTable 
-              assets={filteredAssets}
+              assets={displayedAssets}
               selectedIds={selectedIds}
               onToggleSelection={toggleSelection}
               onSelectAll={selectAll}
@@ -349,6 +391,8 @@ const AssetsPage: React.FC = () => {
               isAllSelected={isAllSelected}
               isIndeterminate={isIndeterminate}
               showSelection={hasSelection}
+              onInlineScheduleMaintenance={handleInlineScheduleMaintenance}
+              onInlineLogInspection={handleInlineLogInspection}
             />
           ) : hasActiveSearch ? (
             <EmptyAssetState
@@ -375,8 +419,8 @@ const AssetsPage: React.FC = () => {
         {/* Maintenance Schedule Modal */}
         <MaintenanceScheduleModal
           isOpen={showMaintenanceModal}
-          onClose={() => setShowMaintenanceModal(false)}
-          selectedAssets={selectedAssets}
+          onClose={() => { setShowMaintenanceModal(false); setInlineMaintenanceAssets(null); }}
+          selectedAssets={inlineMaintenanceAssets ?? selectedAssets}
           onSchedule={handleMaintenanceSchedule}
           isLoading={operationState.isLoading && operationState.operation === 'schedule-maintenance'}
         />

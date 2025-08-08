@@ -208,7 +208,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                     />
                   </th>
                 )}
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20" style={{ minWidth: '250px' }}>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-50 border-r border-gray-200" style={{ minWidth: '250px', boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}>
                   Equipment
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>
@@ -244,7 +244,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                       />
                     </td>
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10">
+                  <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-40 border-r border-gray-200" style={{ boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}>
                     <div className="flex items-center">
                       <span className="text-xl mr-3">{getPriorityIcon(item.priority)}</span>
                       <div className="flex flex-col">
@@ -374,7 +374,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                     />
                   </th>
                 )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200" style={{ minWidth: '250px' }}>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-50 border-r border-gray-200" style={{ minWidth: '250px', boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}>
                   Equipment
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
@@ -397,7 +397,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                     selectedIds.has(item.id) 
                       ? 'bg-blue-50 border-blue-200' 
                       : 'hover:bg-gray-50'
-                  } ${showSelection ? 'cursor-pointer' : 'cursor-pointer'}`}
+                  }`}
                 >
                   {showSelection && (
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -410,7 +410,7 @@ const MaintenanceListTable: React.FC<MaintenanceListTableProps> = ({
                       />
                     </td>
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
+                  <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-40 border-r border-gray-200" style={{ boxShadow: '4px 0 6px -4px rgba(0,0,0,0.12)' }}>
                     <div className="flex items-center">
                       <span className="text-lg mr-3">{getPriorityIcon(item.priority)}</span>
                       <div className="flex flex-col">

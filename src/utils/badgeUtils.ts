@@ -76,6 +76,20 @@ export const getMaintenanceBadge = (isOverdue: boolean) => {
   return `${SMALL_BADGE_CLASSES} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100`;
 };
 
+// Maintenance status pill for multi-state (overdue, due-soon, good, unknown)
+export const getMaintenanceStatusBadge = (status: 'overdue' | 'due-soon' | 'good' | 'unknown') => {
+  switch (status) {
+    case 'overdue':
+      return `${SMALL_BADGE_CLASSES} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100`;
+    case 'due-soon':
+      return `${SMALL_BADGE_CLASSES} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100`;
+    case 'good':
+      return `${SMALL_BADGE_CLASSES} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100`;
+    default:
+      return `${SMALL_BADGE_CLASSES} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100`;
+  }
+};
+
 // Row selection and hover state classes - optimized for snappy interactions
 export const getRowStateClasses = (isSelected: boolean, showSelection: boolean) => {
   const baseClasses = "cursor-pointer";

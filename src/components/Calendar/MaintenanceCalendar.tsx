@@ -1,7 +1,5 @@
 import React, { useState, useMemo, memo, useCallback } from 'react';
 import { Calendar as CalendarIcon, Eye, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
 import { Asset } from '../../types/Asset';
 import { useDeviceType } from '../../hooks/useTouch';
 
@@ -24,7 +22,8 @@ interface MaintenanceCalendarProps {
   assets: Asset[];
   onEventClick: (event: MaintenanceEvent) => void;
   onDateClick: (date: Date) => void;
-  onScheduleNew: (date: Date) => void;
+  onScheduleNew: (date: Date, equipmentId?: string) => void;
+  onReschedule?: (event: MaintenanceEvent, newDate: Date) => void;
   selectedAssetFilter?: string;
   selectedTypeFilter?: string;
 }
@@ -35,6 +34,7 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
   onEventClick,
   onDateClick,
   onScheduleNew,
+  onReschedule,
   selectedAssetFilter,
   selectedTypeFilter
 }) => {
@@ -329,6 +329,11 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
   const renderEvent = useCallback((event: MaintenanceEvent, isCompact = false) => {
     const typeConfig = maintenanceTypes[event.type];
     
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+      e.dataTransfer.setData('application/json', JSON.stringify({ kind: 'event', eventId: event.id }));
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
     if (isCompact) {
       return (
         <div
@@ -337,6 +342,8 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
             e.stopPropagation();
             onEventClick(event);
           }}
+          draggable
+          onDragStart={handleDragStart}
           className={`w-2 h-2 rounded-full ${typeConfig.color} cursor-pointer hover:scale-125 transition-transform duration-150`}
           title={`${event.title} - ${event.assetName}`}
         />
@@ -350,6 +357,8 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
           e.stopPropagation();
           onEventClick(event);
         }}
+        draggable
+        onDragStart={handleDragStart}
         className={`text-xs p-1 mb-1 rounded cursor-pointer transition-all duration-150 hover:shadow-sm ${typeConfig.lightColor} ${typeConfig.textColor} ${typeConfig.borderColor} border`}
       >
         <div className="font-medium truncate">{event.title}</div>
@@ -397,10 +406,40 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
     const isTodayDate = isToday(date);
     const isPast = isPastDate(date);
 
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      try {
+        const raw = e.dataTransfer.getData('application/json');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.kind === 'event') {
+          const evt = events.find(ev => ev.id === data.eventId);
+          if (evt && onReschedule) {
+            const newDate = new Date(date);
+            // preserve original time component
+            newDate.setHours(evt.date.getHours(), evt.date.getMinutes(), 0, 0);
+            onReschedule(evt, newDate);
+          }
+        } else if (data.kind === 'equipment') {
+          const newDate = new Date(date);
+          onScheduleNew(newDate, data.equipmentId);
+        }
+      } catch (err) {
+        // noop
+      }
+    };
+
     return (
       <div
         key={date.toISOString()}
         onClick={() => handleDateClick(date)}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         className={`min-h-[120px] p-2 border border-gray-200 cursor-pointer transition-all duration-150 ${
           isTodayDate ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'
         } ${!isCurrentMonthDay ? 'opacity-50' : ''} ${isPast ? 'bg-gray-50' : ''}`}
@@ -426,7 +465,7 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
         </div>
       </div>
     );
-  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent]);
+  }, [isCurrentMonth, isToday, isPastDate, handleDateClick, renderEvent, events, onReschedule, onScheduleNew]);
 
   const { years, months } = generateDateOptions;
 
@@ -458,6 +497,24 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
             >
               Today
             </button>
+
+            {/* View toggle */}
+            <div className="hidden sm:flex items-center border border-gray-200 rounded-md overflow-hidden">
+              <button
+                onClick={() => setViewMode('month')}
+                className={`px-3 py-2 text-sm ${viewMode === 'month' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                aria-pressed={viewMode === 'month'}
+              >
+                Month
+              </button>
+              <button
+                onClick={() => setViewMode('week')}
+                className={`px-3 py-2 text-sm border-l border-gray-200 ${viewMode === 'week' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                aria-pressed={viewMode === 'week'}
+              >
+                Week
+              </button>
+            </div>
             
             <button
               onClick={() => setShowCalendar(!showCalendar)}
@@ -509,23 +566,53 @@ const MaintenanceCalendar: React.FC<MaintenanceCalendarProps> = memo(({
             {/* Calendar */}
             {showCalendar && (
               <div className="lg:col-span-2">
-                <div className="calendar-container">
-                  <Calendar
-                    onChange={handleDateChange}
-                    value={selectedDate}
-                    tileContent={getTileContent}
-                    tileClassName={getTileClassName}
-                    className="react-calendar-custom"
-                    locale="en-US"
-                    calendarType="US"
-                    showNeighboringMonth={false}
-                    next2Label={null}
-                    prev2Label={null}
-                    formatShortWeekday={(locale, date) => 
-                      date.toLocaleDateString(locale, { weekday: 'short' })
-                    }
-                  />
-                </div>
+                {viewMode === 'month' ? (
+                  <div>
+                    <div className="grid grid-cols-7 gap-0 mb-2">
+                      {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                        <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 border-b border-gray-200">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-0">
+                      {calendarDays.map(date => {
+                        const dayEvents = getEventsForDate(date);
+                        return renderDesktopDay(date, dayEvents);
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Week view */}
+                    {(() => {
+                      const startOfWeek = new Date(selectedDate);
+                      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+                      const weekDays = Array.from({ length: 7 }, (_, i) => {
+                        const d = new Date(startOfWeek);
+                        d.setDate(d.getDate() + i);
+                        return d;
+                      });
+                      return (
+                        <>
+                          <div className="grid grid-cols-7 gap-0 mb-2">
+                            {weekDays.map(d => (
+                              <div key={d.toISOString()} className="p-3 text-center text-sm font-medium text-gray-500 border-b border-gray-200">
+                                {d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-7 gap-0">
+                            {weekDays.map(d => {
+                              const dayEvents = getEventsForDate(d);
+                              return renderDesktopDay(d, dayEvents);
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
             

@@ -27,9 +27,11 @@ import MaintenanceBulkActionBar from '../components/BulkActions/MaintenanceBulkA
 import MaintenanceCarouselModal from '../components/BulkActions/MaintenanceCarouselModal';
 import NotificationToast from '../components/BulkActions/NotificationToast';
 import MaintenanceSkeletonLoader from '../components/Maintenance/MaintenanceSkeletonLoader';
+import MaintenanceWorkflowModal from '../components/Maintenance/MaintenanceWorkflowModal';
+import MaintenanceHistorySection, { HistoryRecordItem } from '../components/Maintenance/Sections/MaintenanceHistorySection';
 
 // Utils
-import { getPriorityBadge, PRIORITY_COLOR_MAP } from '../utils/badgeUtils';
+import { PRIORITY_COLOR_MAP } from '../utils/badgeUtils';
 
 // Types
 import type { MaintenanceItem, MaintenanceFilters } from '../types/Maintenance';
@@ -123,7 +125,18 @@ const MaintenancePageV2: React.FC = () => {
     searchTerm: ''
   });
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
+  const [isPriorityOpen, setIsPriorityOpen] = useState<boolean>(true);
+  const [historyRecords, setHistoryRecords] = useState<HistoryRecordItem[]>(() => {
+    try {
+      const raw = localStorage.getItem('__maintenance_history__');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [] as HistoryRecordItem[];
+    }
+  });
 
   // Data
   const assets = useMemo(() => getMockAssets(), []);
@@ -204,6 +217,10 @@ const MaintenancePageV2: React.FC = () => {
     clearSelection();
   };
 
+  const handleStartGuidedMaintenance = () => {
+    setShowWorkflowModal(true);
+  };
+
   const handleExportMaintenance = () => {
     // Export functionality
     console.log('Export maintenance data');
@@ -255,6 +272,13 @@ const MaintenancePageV2: React.FC = () => {
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export
+                </button>
+                <button
+                  onClick={handleStartGuidedMaintenance}
+                  className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors duration-200"
+                >
+                  <Wrench className="w-4 h-4 mr-2" />
+                  Guided Maintenance
                 </button>
                 <button
                   onClick={handleScheduleMaintenance}
@@ -337,155 +361,136 @@ const MaintenancePageV2: React.FC = () => {
               />
             </div>
 
-            {/* Priority Breakdown */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Priority Breakdown
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(priorityStats).map(([priority, count]) => {
-                  const colorConfig = PRIORITY_COLOR_MAP[priority as keyof typeof PRIORITY_COLOR_MAP];
-                  return (
-                    <div
-                      key={priority}
-                      className={`${colorConfig.bg} ${colorConfig.darkBg} rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200`}
-                      onClick={() => {
-                        handlePriorityFilter(priority as MaintenanceFilters['priorityFilter']);
-                        setActiveView('list');
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className={`text-sm font-medium ${colorConfig.text} ${colorConfig.darkText} capitalize`}>
-                            {priority}
-                          </p>
-                          <p className={`text-2xl font-bold ${colorConfig.text} ${colorConfig.darkText}`}>
-                            {count}
-                          </p>
+{/* Priority Breakdown */}
+            <div className="bg-white rounded-xl shadow-sm">
+              <div className="flex items-center justify-between p-6 pb-2">
+                <h2 className="text-lg font-semibold text-gray-900">Priority Breakdown</h2>
+                <button
+                  className="btn-touch touch-active inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg lg:hidden"
+                  onClick={() => setIsPriorityOpen((v) => !v)}
+                  aria-expanded={isPriorityOpen}
+                  aria-controls="priority-breakdown"
+                >
+                  {isPriorityOpen ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <div id="priority-breakdown" className={`p-6 pt-0 ${deviceType === 'mobile' && !isPriorityOpen ? 'hidden' : ''}`}>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(priorityStats).map(([priority, count]) => {
+                    const colorConfig = PRIORITY_COLOR_MAP[priority as keyof typeof PRIORITY_COLOR_MAP];
+                    return (
+                      <div
+                        key={priority}
+                        className={`${colorConfig.bg} ${colorConfig.darkBg} rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200`}
+                        onClick={() => {
+                          handlePriorityFilter(priority as MaintenanceFilters['priorityFilter']);
+                          setActiveView('list');
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={`text-sm font-medium ${colorConfig.text} ${colorConfig.darkText} capitalize`}>
+                              {priority}
+                            </p>
+                            <p className={`text-2xl font-bold ${colorConfig.text} ${colorConfig.darkText}`}>
+                              {count}
+                            </p>
+                          </div>
+                          <AlertTriangle className={`w-5 h-5 ${colorConfig.icon}`} />
                         </div>
-                        <AlertTriangle className={`w-5 h-5 ${colorConfig.icon}`} />
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* Recent Activity Preview */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Recent Maintenance Activity
-                </h2>
-                <button
-                  onClick={() => setActiveView('list')}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                >
-                  View All
-                </button>
-              </div>
-              <div className="space-y-3">
-                {filteredAndSortedItems.slice(0, 5).map(item => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        item.priority === 'critical' ? 'bg-red-500' :
-                        item.priority === 'high' ? 'bg-orange-500' :
-                        item.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                      }`} />
-                      <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-500">{item.location}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={getPriorityBadge(item.priority, 'small')}>
-                        {item.priority}
-                      </span>
-                      {item.daysOverdue && item.daysOverdue > 0 && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {item.daysOverdue} days overdue
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
         {/* List View */}
         {activeView === 'list' && (
           <div className="space-y-6">
-            {/* Filters */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search maintenance items..."
-                    value={filters.searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="w-full lg:w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Priority Filters */}
-                <div className="flex flex-wrap gap-2">
-                  <FilterButton
-                    label="All"
-                    count={allMaintenanceItems.length}
-                    isActive={filters.priorityFilter === 'all'}
-                    onClick={() => handlePriorityFilter('all')}
-                  />
-                  <FilterButton
-                    label="Critical"
-                    count={priorityStats.critical}
-                    isActive={filters.priorityFilter === 'critical'}
-                    onClick={() => handlePriorityFilter('critical')}
-                    color="red"
-                  />
-                  <FilterButton
-                    label="High"
-                    count={priorityStats.high}
-                    isActive={filters.priorityFilter === 'high'}
-                    onClick={() => handlePriorityFilter('high')}
-                    color="orange"
-                  />
-                  <FilterButton
-                    label="Medium"
-                    count={priorityStats.medium}
-                    isActive={filters.priorityFilter === 'medium'}
-                    onClick={() => handlePriorityFilter('medium')}
-                    color="yellow"
-                  />
-                  <FilterButton
-                    label="Low"
-                    count={priorityStats.low}
-                    isActive={filters.priorityFilter === 'low'}
-                    onClick={() => handlePriorityFilter('low')}
-                    color="green"
-                  />
-                </div>
+{/* Filters */}
+            <div className="bg-white rounded-xl shadow-sm">
+              {/* Mobile collapsible header */}
+              <div className="flex items-center justify-between p-4 lg:hidden">
+                <h3 className="text-base font-semibold text-gray-900">Filters</h3>
+                <button
+                  className="btn-touch touch-active inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg"
+                  onClick={() => setIsFiltersOpen((v) => !v)}
+                  aria-expanded={isFiltersOpen}
+                  aria-controls="maintenance-filters"
+                >
+                  {isFiltersOpen ? 'Hide' : 'Show'}
+                </button>
               </div>
 
-              {/* Results Summary */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  Showing {filteredAndSortedItems.length} of {allMaintenanceItems.length} maintenance items
-                  {filters.searchTerm && (
-                    <span> for "{filters.searchTerm}"</span>
-                  )}
-                  {filters.priorityFilter !== 'all' && (
-                    <span> with {filters.priorityFilter} priority</span>
-                  )}
-                </p>
+              <div id="maintenance-filters" className={`p-6 pt-0 lg:pt-6 ${deviceType === 'mobile' && !isFiltersOpen ? 'hidden' : ''}`}>
+                <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+                  {/* Search */}
+                  <div className="relative w-full lg:w-auto">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Search maintenance items..."
+                      value={filters.searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="input-mobile w-full lg:w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Priority Filters */}
+                  <div className="flex flex-wrap gap-2">
+                    <FilterButton
+                      label="All"
+                      count={allMaintenanceItems.length}
+                      isActive={filters.priorityFilter === 'all'}
+                      onClick={() => handlePriorityFilter('all')}
+                    />
+                    <FilterButton
+                      label="Critical"
+                      count={priorityStats.critical}
+                      isActive={filters.priorityFilter === 'critical'}
+                      onClick={() => handlePriorityFilter('critical')}
+                      color="red"
+                    />
+                    <FilterButton
+                      label="High"
+                      count={priorityStats.high}
+                      isActive={filters.priorityFilter === 'high'}
+                      onClick={() => handlePriorityFilter('high')}
+                      color="orange"
+                    />
+                    <FilterButton
+                      label="Medium"
+                      count={priorityStats.medium}
+                      isActive={filters.priorityFilter === 'medium'}
+                      onClick={() => handlePriorityFilter('medium')}
+                      color="yellow"
+                    />
+                    <FilterButton
+                      label="Low"
+                      count={priorityStats.low}
+                      isActive={filters.priorityFilter === 'low'}
+                      onClick={() => handlePriorityFilter('low')}
+                      color="green"
+                    />
+                  </div>
+                </div>
+
+                {/* Results Summary */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Showing {filteredAndSortedItems.length} of {allMaintenanceItems.length} maintenance items
+                    {filters.searchTerm && (
+                      <span> for "{filters.searchTerm}"</span>
+                    )}
+                    {filters.priorityFilter !== 'all' && (
+                      <span> with {filters.priorityFilter} priority</span>
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -528,6 +533,11 @@ const MaintenancePageV2: React.FC = () => {
           </button>
         )}
 
+        {/* Maintenance History */}
+        <div className="mt-6">
+          <MaintenanceHistorySection records={historyRecords} onOpenRecord={() => {}} />
+        </div>
+
         {/* Bulk Action Bar */}
         {hasSelection && (
           <MaintenanceBulkActionBar
@@ -545,6 +555,18 @@ const MaintenancePageV2: React.FC = () => {
             onClose={() => setShowMaintenanceModal(false)}
             selectedAssets={selectedMaintenanceItems.map(item => item.asset)}
             onComplete={handleMaintenanceComplete}
+          />
+        )}
+        {showWorkflowModal && (
+          <MaintenanceWorkflowModal
+            isOpen={showWorkflowModal}
+            onClose={() => setShowWorkflowModal(false)}
+            assets={assets}
+            selectedAssetId={selectedMaintenanceItems[0]?.asset.id}
+            onComplete={({ historyRecord }) => {
+              setShowWorkflowModal(false);
+              setHistoryRecords(prev => [historyRecord, ...prev]);
+            }}
           />
         )}
 
