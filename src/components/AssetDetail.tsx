@@ -435,25 +435,25 @@ const AssetDetail: React.FC = () => {
                 </div>
                 <div className="px-6 py-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="flex flex-col items-center text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600 mb-1">
                         {asset.operatingConditions.flowRate}
                       </div>
                       <div className="text-sm font-medium text-gray-600">Flow Rate</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="flex flex-col items-center text-center p-4 bg-green-50 rounded-lg">
                       <div className="text-2xl font-bold text-green-600 mb-1">
                         {asset.operatingConditions.pressure}
                       </div>
                       <div className="text-sm font-medium text-gray-600">Pressure</div>
                     </div>
-                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                    <div className="flex flex-col items-center text-center p-4 bg-red-50 rounded-lg">
                       <div className="text-2xl font-bold text-red-600 mb-1">
                         {asset.operatingConditions.temperature}
                       </div>
                       <div className="text-sm font-medium text-gray-600">Temperature</div>
                     </div>
-                    <div className={`text-center p-4 rounded-lg ${getFluidTypeColor(asset.operatingConditions.fluidType)}`}>
+                    <div className={`flex flex-col items-center text-center p-4 rounded-lg ${getFluidTypeColor(asset.operatingConditions.fluidType)}`}>
                       <div className="text-2xl font-bold mb-1">
                         {asset.operatingConditions.fluidType}
                       </div>
@@ -472,25 +472,25 @@ const AssetDetail: React.FC = () => {
                     </span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex flex-col items-center text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                       <div className="text-2xl font-bold text-purple-600 mb-1">
                         {asset.designConditions.flowRate}
                       </div>
                       <div className="text-sm font-medium text-gray-600">Design Flow Rate</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex flex-col items-center text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                       <div className="text-2xl font-bold text-purple-600 mb-1">
                         {asset.designConditions.pressure}
                       </div>
                       <div className="text-sm font-medium text-gray-600">Design Pressure</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex flex-col items-center text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                       <div className="text-2xl font-bold text-purple-600 mb-1">
                         {asset.designConditions.temperature}
                       </div>
                       <div className="text-sm font-medium text-gray-600">Design Temperature</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex flex-col items-center text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                       <div className="text-2xl font-bold text-purple-600 mb-1">
                         {asset.designConditions.fluidType}
                       </div>

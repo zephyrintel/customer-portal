@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { useDeviceType, useTouch } from '../hooks/useTouch';
 import VirtualList from './VirtualList/VirtualList';
+import {
+  Zap,
+  Droplets,
+  Wind,
+  Wrench,
+  Flame,
+  Cylinder,
+  Settings,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface AssetsTableProps {
   assets: Asset[];
@@ -27,6 +38,28 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const deviceType = useDeviceType();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftScroll, setShowLeftScroll] = useState(false);
+  const [showRightScroll, setShowRightScroll] = useState(false);
+
+  // Check scroll position to show/hide scroll indicators
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftScroll(scrollLeft > 0);
+      setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Initialize scroll indicators on mount and when assets change
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      handleScroll();
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [assets]);
 
   const handleRowClick = (assetId: string, event: React.MouseEvent) => {
     // Don't navigate if clicking on checkbox or if selection is enabled and shift/ctrl is pressed
@@ -101,24 +134,24 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
     }
   };
 
-  const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
-    switch (type) {
-      case 'Pump':
-        return '🔄';
-      case 'Compressor':
-        return '💨';
-      case 'Valve':
-        return '🔧';
-      case 'Motor':
-        return '⚡';
-      case 'Heat Exchanger':
-        return '🔥';
-      case 'Tank':
-        return '🛢️';
-      default:
-        return '⚙️';
-    }
-  };
+const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
+  switch (type) {
+    case 'Pump':
+      return <Droplets />;
+    case 'Compressor':
+      return <Wind />;
+    case 'Valve':
+      return <Wrench />;
+    case 'Motor':
+      return <Zap />;
+    case 'Heat Exchanger':
+      return <Flame />;
+    case 'Tank':
+      return <Cylinder />;
+    default:
+      return <Settings />;
+  }
+};
 
   // Mobile card view for better touch interaction
   const renderMobileCard = (asset: Asset, index: number) => (
@@ -198,8 +231,23 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
         </p>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+<div className="relative">
+        {/* Left scroll indicator */}
+        {showLeftScroll && (
+          <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-r from-white via-white to-transparent pl-2 pr-8 pointer-events-none">
+            <ChevronLeft className="text-gray-600 w-5 h-5" />
+          </div>
+        )}
+        
+        {/* Right scroll indicator */}
+        {showRightScroll && (
+          <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-l from-white via-white to-transparent pr-2 pl-8 pointer-events-none">
+            <ChevronRight className="text-gray-600 w-5 h-5" />
+          </div>
+        )}
+        
+        <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '800px' }}>
           <thead className="bg-gray-50">
             <tr>
               {showSelection && (
@@ -216,16 +264,16 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
                   />
                 </th>
               )}
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20" style={{ minWidth: '250px' }}>
                 Equipment
               </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>
                 Location
               </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
                 Status
               </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                 Priority
               </th>
             </tr>
@@ -252,7 +300,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
                     />
                   </td>
                 )}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
                   <div className="flex items-center">
                     <span className="text-xl mr-3">{getEquipmentTypeIcon(asset.equipmentType)}</span>
                     <div className="flex flex-col">
@@ -289,6 +337,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
@@ -356,8 +405,22 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
         </p>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="relative">
+        {/* Desktop scroll indicators */}
+        {showLeftScroll && (
+          <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-r from-white via-white to-transparent pl-2 pr-8 pointer-events-none">
+            <ChevronLeft className="text-gray-600 w-5 h-5" />
+          </div>
+        )}
+        
+        {showRightScroll && (
+          <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-l from-white via-white to-transparent pr-2 pl-8 pointer-events-none">
+            <ChevronRight className="text-gray-600 w-5 h-5" />
+          </div>
+        )}
+        
+        <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
           <thead className="bg-gray-50">
             <tr>
               {showSelection && (
@@ -374,22 +437,22 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
                   />
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200" style={{ minWidth: '250px' }}>
                 Equipment
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
                 Serial Number
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>
                 Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                 Install Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '150px' }}>
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                 Priority
               </th>
             </tr>
@@ -416,7 +479,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
                     />
                   </td>
                 )}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r border-gray-200">
                   <div className="flex items-center">
                     <span className="text-lg mr-3">{getEquipmentTypeIcon(asset.equipmentType)}</span>
                     <div className="flex flex-col">
@@ -464,6 +527,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
       )}

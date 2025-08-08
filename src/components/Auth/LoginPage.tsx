@@ -8,7 +8,7 @@ const isDevelopment = window.location.hostname === 'localhost' ||
                      window.location.hostname.includes('bolt.new');
 
 const LoginPage: React.FC = () => {
-  const { loginRedirect, loginPopup, isLoading, error, isInteractionInProgress, environmentInfo } = useAuth();
+  const { loginRedirect, isLoading, error, isInteractionInProgress, environmentInfo } = useAuth();
   
   const handleDevBypass = () => {
     // Create a mock user for development
@@ -40,13 +40,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleLoginPopup = async () => {
-    try {
-      await loginPopup();
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
 
   const isLoginDisabled = isLoading || isInteractionInProgress;
   const showNewTabOption = environmentInfo?.isIframe && environmentInfo?.checked;
@@ -185,28 +178,6 @@ const LoginPage: React.FC = () => {
             )}
           </button>
 
-          {/* Alternative Popup Login */}
-          {environmentInfo?.checked && (
-            <>
-              <button
-                onClick={handleLoginPopup}
-                disabled={isLoginDisabled || !environmentInfo.canUsePopups}
-                className="w-full flex items-center justify-center px-6 py-3 border border-blue-300 rounded-lg bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                <span>
-                  {!environmentInfo.canUsePopups ? 'Popup Blocked' : 'Sign in with Popup'}
-                </span>
-              </button>
-              
-              <p className="text-xs text-gray-500 text-center">
-                {!environmentInfo.canUsePopups 
-                  ? 'Please disable popup blockers and refresh the page'
-                  : 'Use popup if redirect doesn\'t work in your browser'
-                }
-              </p>
-            </>
-          )}
 
           {/* Development Bypass Button */}
           {isDevelopment && (

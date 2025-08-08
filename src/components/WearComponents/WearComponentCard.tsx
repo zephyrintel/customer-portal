@@ -72,7 +72,7 @@ const WearComponentCard: React.FC<WearComponentCardProps> = ({
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-2">
           {getStatusIcon()}
-          <div>
+          <div className="flex flex-col items-start">
             <h3 className="font-semibold text-gray-900 text-sm">
               Part #{component.partNumber}
             </h3>
@@ -83,7 +83,7 @@ const WearComponentCard: React.FC<WearComponentCardProps> = ({
         </div>
         
         {/* Stock Indicator */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockInfo.colorClass}`}>
             <Package className={`w-3 h-3 mr-1 ${stockInfo.iconClass}`} />
             {stockInfo.displayText}
@@ -110,13 +110,13 @@ const WearComponentCard: React.FC<WearComponentCardProps> = ({
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
-          <div>
-            <span className="font-medium">Interval:</span>{' '}
-            {component.recommendedReplacementInterval || 'Not specified'}
+          <div className="flex flex-col">
+            <span className="font-medium">Interval:</span>
+            <span>{component.recommendedReplacementInterval || 'Not specified'}</span>
           </div>
-          <div>
-            <span className="font-medium">Last Replaced:</span>{' '}
-            {formatLastReplaced(component.lastReplaced)}
+          <div className="flex flex-col">
+            <span className="font-medium">Last Replaced:</span>
+            <span>{formatLastReplaced(component.lastReplaced)}</span>
           </div>
         </div>
         

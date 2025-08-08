@@ -14,13 +14,13 @@ import { useAssetSelection } from '../hooks/useAssetSelection';
 import { useBulkOperations } from '../hooks/useBulkOperations';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { getMockAssets } from '../data/mockData';
-import { CheckSquare, Square, Keyboard } from 'lucide-react';
+import { ChevronDown, Keyboard } from 'lucide-react';
 import { useDeviceType, usePullToRefresh } from '../hooks/useTouch';
 
 const AssetsPage: React.FC = () => {
   const navigate = useNavigate();
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
-  const [selectionMode, setSelectionMode] = useState(false);
+  const [showBulkActionsMenu, setShowBulkActionsMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const searchBarRef = useRef<HTMLInputElement>(null);
   const deviceType = useDeviceType();
@@ -94,22 +94,16 @@ const AssetsPage: React.FC = () => {
     onFocusSearch: focusSearch,
     onSelectAll: selectAll,
     onClearSearch: clearSearch,
-    onClearSelection: () => {
-      clearSelection();
-      setSelectionMode(false);
-    },
+    onClearSelection: clearSelection,
     onOpenFirstAsset: openFirstAsset,
     searchTerm,
     resultCount,
     hasSelection
   });
 
-  // Toggle selection mode
-  const handleToggleSelectionMode = () => {
-    if (selectionMode) {
-      clearSelection();
-    }
-    setSelectionMode(!selectionMode);
+  // Toggle bulk actions menu
+  const toggleBulkActionsMenu = () => {
+    setShowBulkActionsMenu(!showBulkActionsMenu);
   };
 
   // Bulk operation handlers
@@ -121,42 +115,37 @@ const AssetsPage: React.FC = () => {
     await scheduleMaintenance(selectedAssets, scheduleData);
     setShowMaintenanceModal(false);
     clearSelection();
-    setSelectionMode(false);
   };
 
   const handleOrderParts = async () => {
     await orderParts(selectedAssets);
     clearSelection();
-    setSelectionMode(false);
+    setShowBulkActionsMenu(false);
   };
 
   const handleExport = async (format: 'csv' | 'pdf' | 'excel') => {
     await exportAssets(selectedAssets, format);
     clearSelection();
-    setSelectionMode(false);
+    setShowBulkActionsMenu(false);
   };
 
   const handleAddTags = async () => {
     const mockTags = ['maintenance-scheduled', 'high-priority'];
     await addTags(selectedAssets, mockTags);
     clearSelection();
-    setSelectionMode(false);
+    setShowBulkActionsMenu(false);
   };
 
   const handleArchive = async () => {
     if (window.confirm(`Are you sure you want to archive ${selectedCount} asset${selectedCount > 1 ? 's' : ''}?`)) {
       await archiveAssets(selectedAssets);
       clearSelection();
-      setSelectionMode(false);
+      setShowBulkActionsMenu(false);
     }
   };
 
   // Handle suggested actions
   const handleSuggestedAction = (action: string) => {
-    if (!selectionMode) {
-      setSelectionMode(true);
-    }
-    
     switch (action) {
       case 'schedule-maintenance':
         handleScheduleMaintenance();
@@ -175,7 +164,7 @@ const AssetsPage: React.FC = () => {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 py-8">
+      <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SkeletonLoader rows={8} />
         </div>
@@ -186,7 +175,7 @@ const AssetsPage: React.FC = () => {
   // Show empty state for no assets
   if (assets.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-100 py-8">
+      <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <EmptyAssetState
             type="no-assets"
@@ -201,7 +190,7 @@ const AssetsPage: React.FC = () => {
   return (
     <div 
       ref={deviceType === 'mobile' ? touchRef : undefined}
-      className="min-h-screen bg-gray-100 py-4 sm:py-8 relative"
+      className="min-h-screen bg-gray-50 py-4 sm:py-8 relative"
     >
       {/* Pull to refresh indicator */}
       {showRefreshIndicator && deviceType === 'mobile' && (
@@ -238,7 +227,7 @@ const AssetsPage: React.FC = () => {
               </div>
             </div>
             
-            {/* Selection Mode Toggle */}
+            {/* Bulk Actions Dropdown */}
             <div className={`flex items-center space-x-3 ${
               deviceType === 'mobile' ? 'flex-col space-y-2 space-x-0' : ''
             }`}>
@@ -249,26 +238,68 @@ const AssetsPage: React.FC = () => {
               </div>
               )}
               
-              <button
-                onClick={handleToggleSelectionMode}
-                className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[44px] ${
-                  selectionMode
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-blue-500'
-                }`}
-              >
-                {selectionMode ? (
-                  <>
-                    <CheckSquare className="w-4 h-4 mr-2" />
-                    Exit Selection
-                  </>
-                ) : (
-                  <>
-                    <Square className="w-4 h-4 mr-2" />
-                    {deviceType === 'mobile' ? 'Select' : 'Select Assets'}
-                  </>
+              <div className="relative">
+                <button
+                  onClick={toggleBulkActionsMenu}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hover:bg-blue-700 min-h-[44px]"
+                >
+                  {deviceType === 'mobile' ? 'Actions' : 'Bulk Actions'}
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </button>
+                
+                {showBulkActionsMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-20">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          handleScheduleMaintenance();
+                          setShowBulkActionsMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Schedule Maintenance
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleOrderParts();
+                          setShowBulkActionsMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Order Parts
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleExport('csv');
+                          setShowBulkActionsMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Export Assets
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleAddTags();
+                          setShowBulkActionsMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Add Tags
+                      </button>
+                      <hr className="my-1" />
+                      <button
+                        onClick={() => {
+                          handleArchive();
+                          setShowBulkActionsMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        Archive Assets
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -317,7 +348,7 @@ const AssetsPage: React.FC = () => {
               onClearSelection={clearSelection}
               isAllSelected={isAllSelected}
               isIndeterminate={isIndeterminate}
-              showSelection={selectionMode}
+              showSelection={hasSelection}
             />
           ) : hasActiveSearch ? (
             <EmptyAssetState
@@ -333,10 +364,7 @@ const AssetsPage: React.FC = () => {
           selectedCount={selectedCount}
           selectedAssets={selectedAssets}
           operationState={operationState}
-          onClearSelection={() => {
-            clearSelection();
-            setSelectionMode(false);
-          }}
+          onClearSelection={clearSelection}
           onScheduleMaintenance={handleScheduleMaintenance}
           onOrderParts={handleOrderParts}
           onExport={handleExport}

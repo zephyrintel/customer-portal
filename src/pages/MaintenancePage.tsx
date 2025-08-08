@@ -251,7 +251,7 @@ const MaintenancePage: React.FC = () => {
   return (
     <div 
       ref={deviceType === 'mobile' ? touchRef : undefined}
-      className="min-h-screen bg-gray-100 py-4 sm:py-8 relative"
+      className="min-h-screen bg-gray-50 py-4 sm:py-8 relative"
     >
       {/* Pull to refresh indicator */}
       {showRefreshIndicator && deviceType === 'mobile' && (
