@@ -179,4 +179,21 @@ export interface Asset {
     type?: 'maintenance' | 'general' | 'system';
     source?: 'user' | 'system' | 'calendar';
   }>;
+
+  // PM tracking fields
+  maintenancePlan?: {
+    id: string;
+    name: string;
+    frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annually';
+    intervalDays: number;
+    lastPerformed?: string;
+    nextDue?: string;
+    assignedTechnician?: string;
+    estimatedDuration: number; // minutes
+    isActive: boolean;
+  };
+
+  // Quick indicators for dashboard
+  hasPMPlan: boolean; // computed or stored
+  pmStatus: 'covered' | 'missing' | 'overdue' | 'upcoming';
 }

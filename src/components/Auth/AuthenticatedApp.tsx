@@ -31,7 +31,7 @@ const AuthenticatedApp: React.FC = () => {
           <Route index element={<DashboardPage />} />
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/:id" element={<AssetDetail />} />
-          <Route path="maintenance-v2" element={<MaintenancePageV2 />} />
+          <Route path="maintenance" element={<MaintenancePageV2 />} />
           <Route path="orders" element={<PartsOrderPage />} />
           <Route path="documentation" element={<DocumentationPage />} />
           <Route path="notifications" element={<NotificationsPage />} />

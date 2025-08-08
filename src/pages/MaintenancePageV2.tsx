@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Eye,
   Plus,
-  Download} from 'lucide-react';
+  Download,
+  ChevronLeft} from 'lucide-react';
 
 // Hooks
 import { getMockAssets } from '../data/mockData';
@@ -35,6 +36,7 @@ import { PRIORITY_COLOR_MAP } from '../utils/badgeUtils';
 
 // Types
 import type { MaintenanceItem, MaintenanceFilters } from '../types/Maintenance';
+import type { Asset } from '../types/Asset';
 
 interface StatCardProps {
   title: string;
@@ -125,7 +127,14 @@ const MaintenancePageV2: React.FC = () => {
     searchTerm: ''
   });
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [showBackfillModal, setShowBackfillModal] = useState(false);
+  const [backfillDate, setBackfillDate] = useState<string>('');
+  const [backfillNotes, setBackfillNotes] = useState<string>('');
+  const [backfillFiles, setBackfillFiles] = useState<FileList | null>(null);
   const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [showNoHistoryModal, setShowNoHistoryModal] = useState(false);
+  const [selectedAssetForBackfill, setSelectedAssetForBackfill] = useState<Asset | null>(null);
+  const [noHistorySort, setNoHistorySort] = useState<'name' | 'serial' | 'type' | 'status' | 'location'>('name');
   const [isLoading, setIsLoading] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   const [isPriorityOpen, setIsPriorityOpen] = useState<boolean>(true);
@@ -138,8 +147,21 @@ const MaintenancePageV2: React.FC = () => {
     }
   });
 
+  // Local toast for ad-hoc notifications
+  const [localToast, setLocalToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
   // Data
-  const assets = useMemo(() => getMockAssets(), []);
+  const [assets, setAssets] = useState<Asset[]>(() => {
+    const base = getMockAssets();
+    try {
+      const raw = localStorage.getItem('__asset_overrides__');
+      if (raw) {
+        const overrides = JSON.parse(raw) as Record<string, Partial<Asset>>;
+        return base.map(a => overrides[a.id] ? { ...a, ...overrides[a.id] } : a);
+      }
+    } catch {}
+    return base;
+  });
   const { filteredAndSortedItems, allMaintenanceItems } = useMaintenanceFiltering(assets, filters);
   const stats = useMaintenanceStats(assets);
 
@@ -193,19 +215,42 @@ const MaintenancePageV2: React.FC = () => {
     return counts;
   }, [allMaintenanceItems]);
 
-  const overdueItems = useMemo(() => {
-    return allMaintenanceItems.filter(item => 
-      item.daysOverdue && item.daysOverdue > 0
-    ).length;
-  }, [allMaintenanceItems]);
-
-  const dueSoonItems = useMemo(() => {
-    return allMaintenanceItems.filter(item => {
-      if (!item.nextDueDate) return false;
-      const daysUntilDue = Math.ceil((item.nextDueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      return daysUntilDue <= 7 && daysUntilDue > 0;
+  // Overdue based on PM plan nextDue vs lastMaintenance
+  const overdueAssetsCount = useMemo(() => {
+    const today = new Date();
+    return assets.filter(a => {
+      const plan = a.maintenancePlan;
+      if (!plan || !plan.isActive || !plan.nextDue) return false;
+      const nextDue = new Date(plan.nextDue);
+      if (isNaN(nextDue.getTime())) return false;
+      const lastMaint = a.lastMaintenance ? new Date(a.lastMaintenance) : null;
+      const cleared = lastMaint ? lastMaint.getTime() >= nextDue.getTime() : false;
+      return nextDue.getTime() < today.getTime() && !cleared;
     }).length;
-  }, [allMaintenanceItems]);
+  }, [assets]);
+
+  // Assets missing a last maintenance date
+  const noHistoryAssets = useMemo(() => assets.filter(a => !a.lastMaintenance), [assets]);
+  const sortedNoHistoryAssets = useMemo(() => {
+    const arr = [...noHistoryAssets];
+    arr.sort((a, b) => {
+      switch (noHistorySort) {
+        case 'serial':
+          return a.serialNumber.localeCompare(b.serialNumber);
+        case 'type':
+          return a.equipmentType.localeCompare(b.equipmentType) || a.brand.localeCompare(b.brand);
+        case 'status':
+          return a.currentStatus.localeCompare(b.currentStatus);
+        case 'location':
+          return a.location.facility.localeCompare(b.location.facility) || a.location.area.localeCompare(b.location.area);
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+    return arr;
+  }, [noHistoryAssets, noHistorySort]);
+  const missingLastMaintCount = noHistoryAssets.length;
 
   // Action handlers
   const handleScheduleMaintenance = () => {
@@ -249,6 +294,167 @@ const MaintenancePageV2: React.FC = () => {
       )}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* No History Modal */}
+        {showNoHistoryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white w-full max-w-4xl rounded-xl shadow-xl p-6 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">{missingLastMaintCount} assets with no maintenance history</h3>
+                <div className="flex items-center space-x-3">
+                  {missingLastMaintCount > 8 && (
+                    <div className="flex items-center space-x-2 text-sm">
+                      <label className="text-gray-600">Sort by</label>
+                      <select
+                        value={noHistorySort}
+                        onChange={(e) => setNoHistorySort(e.target.value as any)}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="name">Name</option>
+                        <option value="serial">Serial</option>
+                        <option value="type">Type</option>
+                        <option value="status">Status</option>
+                        <option value="location">Location</option>
+                      </select>
+                    </div>
+                  )}
+                  <button onClick={() => setShowNoHistoryModal(false)} className="px-3 py-1.5 rounded-md border border-gray-300 text-sm">Close</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedNoHistoryAssets.length === 0 ? (
+                  <div className="col-span-full">
+                    <div className="flex flex-col items-center justify-center text-center bg-gray-50 border border-dashed border-gray-300 rounded-xl p-10">
+                      <CheckCircle2 className="w-10 h-10 text-green-600 mb-2" />
+                      <h4 className="text-base font-semibold text-gray-900 mb-1">All set!</h4>
+                      <p className="text-sm text-gray-600 mb-4">All assets have a recorded maintenance history.</p>
+                      <button onClick={() => setShowNoHistoryModal(false)} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">Close</button>
+                    </div>
+                  </div>
+                ) : (
+                  sortedNoHistoryAssets.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => {
+                        setSelectedAssetForBackfill(a);
+                        setShowNoHistoryModal(false);
+                        setShowBackfillModal(true);
+                      }}
+                      className="group text-left border border-gray-200 rounded-xl p-4 bg-white shadow hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 hover:border-blue-300"
+                      aria-label={`Backfill maintenance for ${a.name}`}
+                    >
+                      <div className="mb-2 flex items-start justify-between">
+                        <h4 className="text-sm font-semibold text-gray-900 truncate pr-2" title={a.name}>{a.name}</h4>
+                        <span className="ml-2 inline-block h-2 w-2 rounded-full bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="text-xs text-gray-700 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-600">Serial</span>
+                          <span className="font-mono text-gray-900">{a.serialNumber}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-600">Type • Brand</span>
+                          <span className="text-gray-900">{a.equipmentType} • {a.brand}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-600">Location</span>
+                          <span className="text-gray-900">{a.location.facility} • {a.location.area}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-600">Status</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-blue-50 text-blue-700 capitalize border border-blue-200">{a.currentStatus.toLowerCase()}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Backfill Modal (retained, not triggered by the card click) */}
+        {showBackfillModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <button onClick={() => { setShowBackfillModal(false); setShowNoHistoryModal(true); }} className="inline-flex items-center px-2 py-1 text-sm text-gray-600 hover:text-gray-900">
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                </button>
+                <h3 className="text-lg font-semibold text-gray-900">Backfill Last Maintenance{selectedAssetForBackfill ? ` — ${selectedAssetForBackfill.name}` : ''}</h3>
+                <div />
+              </div>
+              <p className="text-sm text-gray-600 mb-4">Enter the last known maintenance date and include any documentation or notes to enrich your records.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Maintenance Date</label>
+                  <input type="date" value={backfillDate} onChange={e => setBackfillDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea value={backfillNotes} onChange={e => setBackfillNotes(e.target.value)} rows={4} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="What was done? Any findings?" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload Files (optional)</label>
+                  <input type="file" multiple onChange={e => setBackfillFiles(e.target.files)} className="w-full" />
+                </div>
+              </div>
+              <div className="mt-6 flex items-center justify-between">
+                <div>
+                  <button onClick={() => { setShowBackfillModal(false); setShowNoHistoryModal(true); }} className="px-3 py-2 rounded-lg text-blue-600 hover:text-blue-700">Back to list</button>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => {
+                      if (!selectedAssetForBackfill || !backfillDate) {
+                        setShowBackfillModal(false);
+                        setSelectedAssetForBackfill(null);
+                        return;
+                      }
+                      // Update local state
+                      setAssets(prev => prev.map(a =>
+                        a.id === selectedAssetForBackfill.id
+                          ? {
+                              ...a,
+                              lastMaintenance: backfillDate,
+                              notes: [
+                                ...a.notes,
+                                {
+                                  date: new Date().toISOString(),
+                                  text: backfillNotes || 'Backfilled last maintenance date',
+                                  type: 'maintenance',
+                                  source: 'user'
+                                }
+                              ]
+                            }
+                          : a
+                      ));
+                      // Persist to localStorage overrides
+                      try {
+                        const raw = localStorage.getItem('__asset_overrides__');
+                        const overrides = raw ? JSON.parse(raw) : {};
+                        overrides[selectedAssetForBackfill.id] = {
+                          ...(overrides[selectedAssetForBackfill.id] || {}),
+                          lastMaintenance: backfillDate
+                        };
+                        localStorage.setItem('__asset_overrides__', JSON.stringify(overrides));
+                      } catch {}
+                      setShowBackfillModal(false);
+                      setSelectedAssetForBackfill(null);
+                      setBackfillDate('');
+                      setBackfillNotes('');
+                      setBackfillFiles(null);
+                      setLocalToast({ message: 'Maintenance history updated', type: 'success' });
+                    }}
+                    className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+                  >
+                    Save
+                  </button>
+                  <button onClick={() => { setShowBackfillModal(false); setSelectedAssetForBackfill(null); }} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -322,25 +528,24 @@ const MaintenancePageV2: React.FC = () => {
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
-                title="Overdue Items"
-                value={overdueItems}
-                subtitle="Require immediate attention"
+                title="Overdue Maintenance"
+                value={overdueAssetsCount}
+                subtitle="Scheduled date passed"
                 icon={AlertTriangle}
                 iconColor="text-red-600"
                 bgColor="bg-white border-l-4 border-red-500"
                 onClick={() => {
-                  setFilters({ priorityFilter: 'all', searchTerm: '' });
                   setActiveView('list');
                 }}
               />
               <StatCard
-                title="Due Soon"
-                value={dueSoonItems}
-                subtitle="Due within 7 days"
+                title="No maintenance history"
+                value={missingLastMaintCount}
+                subtitle={`${missingLastMaintCount} assets with no maintenance history`}
                 icon={Clock}
                 iconColor="text-orange-600"
                 bgColor="bg-white border-l-4 border-orange-500"
-                onClick={() => setActiveView('list')}
+                onClick={() => setShowNoHistoryModal(true)}
               />
               <StatCard
                 title="Total Items"
@@ -576,6 +781,14 @@ const MaintenancePageV2: React.FC = () => {
             message={operationState.message}
             type={operationState.type}
             onClose={clearOperationState}
+          />
+        )}
+        {localToast && (
+          <NotificationToast
+            message={localToast.message}
+            type={localToast.type as 'success' | 'error'}
+            durationMs={3000}
+            onClose={() => setLocalToast(null)}
           />
         )}
       </div>
