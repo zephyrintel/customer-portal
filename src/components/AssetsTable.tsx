@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Asset } from '../types/Asset';
 import { useDeviceType } from '../hooks/useTouch';
-import { getAssetMaintenanceStatus, calculateMaintenanceStatus } from '../utils/maintenanceUtils';
+import { getAssetMaintenanceStatus } from '../utils/maintenanceUtils';
 import { 
   getStatusBadge, 
   getCriticalityBadge, 
-  getMaintenanceBadge, 
   getMaintenanceStatusBadge,
   getRowStateClasses, 
   getCardStateClasses 
@@ -178,9 +177,9 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
           <div className="mt-1 flex items-center space-x-2">
             {(() => {
               const { overdueCount, dueSoonCount } = getAssetMaintenanceStatus(asset);
-              const status = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
+              const status: 'overdue' | 'due-soon' | 'good' = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
               return (
-                <span className={getMaintenanceStatusBadge(status as any)}>
+                <span className={getMaintenanceStatusBadge(status)}>
                   {status === 'overdue' ? 'Overdue' : status === 'due-soon' ? 'Due Soon' : 'Good'}
                 </span>
               );
@@ -318,7 +317,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     const status = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
                     return (
                       <div className="flex items-center space-x-2">
-                        <span className={getMaintenanceStatusBadge(status as any)}>
+                        <span className={getMaintenanceStatusBadge(status)}>
                           {status === 'overdue' ? 'Overdue' : status === 'due-soon' ? 'Due Soon' : 'Good'}
                         </span>
                         <button
@@ -531,7 +530,7 @@ const getEquipmentTypeIcon = (type: Asset['equipmentType']) => {
                     const status = overdueCount > 0 ? 'overdue' : dueSoonCount > 0 ? 'due-soon' : 'good';
                     return (
                       <div className="flex items-center space-x-2">
-                        <span className={getMaintenanceStatusBadge(status as any)}>
+                        <span className={getMaintenanceStatusBadge(status)}>
                           {status === 'overdue' ? 'Overdue' : status === 'due-soon' ? 'Due Soon' : 'Good'}
                         </span>
                         <button

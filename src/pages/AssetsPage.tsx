@@ -123,12 +123,12 @@ const AssetsPage: React.FC = () => {
   };
 
   // Inline actions
-  const handleInlineScheduleMaintenance = (asset: any) => {
+  const handleInlineScheduleMaintenance = (asset: Asset) => {
     setInlineMaintenanceAssets([asset]);
     setShowMaintenanceModal(true);
   };
 
-  const handleInlineLogInspection = (asset: any) => {
+  const handleInlineLogInspection = (asset: Asset) => {
     // For now, just add a system note to simulate logging an inspection
     console.log('Log inspection for asset', asset.id);
     // In a full implementation, this could open an inspection modal

@@ -19,7 +19,6 @@ interface BulkActionBarProps {
 
 const BulkActionBar: React.FC<BulkActionBarProps> = ({
   selectedCount,
-  selectedAssets,
   operationState,
   onClearSelection,
   onScheduleMaintenance,

@@ -13,7 +13,7 @@ interface UseHorizontalScrollIndicatorsReturn {
  * in either direction, commonly used with chevron gradient overlays
  */
 export const useHorizontalScrollIndicators = (
-  dependencies: any[] = []
+  dependencies: unknown[] = []
 ): UseHorizontalScrollIndicatorsReturn => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);

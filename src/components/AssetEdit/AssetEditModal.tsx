@@ -288,7 +288,7 @@ const AssetEditModal: React.FC<AssetEditModalProps> = ({
                       value={formData.operatingConditions.fluidType}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        operatingConditions: { ...prev.operatingConditions, fluidType: e.target.value as any }
+                        operatingConditions: { ...prev.operatingConditions, fluidType: e.target.value as unknown as string }
                       }))}
                       className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       disabled={isLoading}

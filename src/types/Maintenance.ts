@@ -42,7 +42,7 @@ export interface UseAssetSelectionOptions<T> {
 /**
  * Props for the useVirtualList hook
  */
-export interface UseVirtualListProps<T = any> {
+export interface UseVirtualListProps<T = unknown> {
   items: T[];
   itemHeight: number;
   containerHeight: number;

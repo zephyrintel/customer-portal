@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle, Power } from 'lucide-react';
 import BaseCard from './BaseCard';
 import MetricDisplay from './MetricDisplay';
 import ProgressBar from './ProgressBar';
-import StatusIndicator from './StatusIndicator';
+// import StatusIndicator from './StatusIndicator';
 import { getInverseStatusType } from '../../utils/dashboardMetrics';
 
 interface AssetStatusCardProps {
@@ -38,8 +38,7 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
       case 'error': return 'text-red-600';
     }
   };
-
-  const getProgressColor = () => {
+  const getProgressColor = (): 'green' | 'yellow' | 'red' => {
     switch (statusType) {
       case 'success': return 'green';
       case 'warning': return 'yellow';
@@ -100,7 +99,7 @@ const AssetStatusCard: React.FC<AssetStatusCardProps> = ({
         <div className="h-6 flex items-center">
           <ProgressBar
             percentage={operatingPercentage}
-            color={getProgressColor() as any}
+            color={getProgressColor()}
             label="Operational Rate"
             isLoading={isLoading}
           />

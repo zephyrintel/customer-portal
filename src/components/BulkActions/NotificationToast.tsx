@@ -17,26 +17,6 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   const [progress, setProgress] = useState(100);
   const mountedRef = useRef(false);
 
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, durationMs);
-
-      mountedRef.current = true;
-      const raf = requestAnimationFrame(() => setProgress(0));
-
-      return () => {
-        clearTimeout(timer);
-        cancelAnimationFrame(raf);
-        mountedRef.current = false;
-        setProgress(100);
-      };
-    }
-  }, [message, onClose, durationMs]);
-
-  if (!message) return null;
-
   const colorClasses = useMemo(
     () => (
       type === 'success'
@@ -57,6 +37,26 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
     ),
     [type]
   );
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, durationMs);
+
+      mountedRef.current = true;
+      const raf = requestAnimationFrame(() => setProgress(0));
+
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(raf);
+        mountedRef.current = false;
+        setProgress(100);
+      };
+    }
+  }, [message, onClose, durationMs]);
+
+  if (!message) return null;
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-sm w-full">

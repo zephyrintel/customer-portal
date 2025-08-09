@@ -14,21 +14,34 @@ const isInIframe = (): boolean => {
 };
 
 const canUsePopups = (): boolean => {
+  // Non-intrusive heuristic: do NOT open a real window here.
+  // We'll handle actual popup-blocker errors when attempting popup login.
   try {
-    // Test if we can open a popup
-    const testPopup = window.open('', '_blank', 'width=1,height=1');
-    if (testPopup) {
-      testPopup.close();
-      return true;
-    }
-    return false;
-  } catch (e) {
-    return false;
+    // Disallow popups in iframes and standalone app modes
+    if (isInIframe()) return false;
+    const isIosStandalone = (navigator as any)?.standalone === true;
+    const isDisplayModeStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches === true;
+    if (isIosStandalone || isDisplayModeStandalone) return false;
+    return true;
+  } catch {
+    // If detection fails, assume popups are allowed and handle errors at call-time
+    return true;
   }
 };
 
 export const useAuth = () => {
   const { instance, accounts, inProgress } = useMsal();
+  useEffect(() => {
+    // Basic diagnostics for auth state transitions
+    // Note: avoid logging sensitive tokens
+    const info = {
+      accounts: accounts?.length ?? 0,
+      inProgress,
+      clientId: (instance as any)?.config?.auth?.clientId,
+      msalInstanceId: (globalThis as any).__ZEPHYR_MSAL_INSTANCE_ID__,
+    };
+    console.info('[Auth] useAuth state', info);
+  }, [accounts, inProgress, instance]);
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     user: null,
@@ -187,6 +200,15 @@ export const useAuth = () => {
         error: null,
       });
     }
+  }, [instance]);
+
+  // Log major login flows
+  useEffect(() => {
+    console.info('[Auth] Hook mounted', {
+      msalInstanceId: (globalThis as any).__ZEPHYR_MSAL_INSTANCE_ID__,
+      clientId: (instance as any)?.config?.auth?.clientId,
+    });
+    return () => console.info('[Auth] Hook unmounted');
   }, [instance]);
 
   // Handle authentication state on mount and when accounts change

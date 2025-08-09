@@ -40,9 +40,7 @@ const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
   onClose,
   event,
   asset,
-  onEdit,
   onComplete,
-  onReschedule,
   onCancel,
   onUpdate
 }) => {

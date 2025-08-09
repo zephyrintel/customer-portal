@@ -72,7 +72,7 @@ export function getAssetMaintenanceStatus(asset: Asset): {
 /**
  * Checks if an asset has maintenance due within specified days
  */
-export function hasMaintenanceDue(asset: Asset, withinDays: number = 30): boolean {
+export function hasMaintenanceDue(asset: Asset, _withinDays: number = 30): boolean {
   const { hasMaintenanceDue } = getAssetMaintenanceStatus(asset);
   return hasMaintenanceDue;
 }

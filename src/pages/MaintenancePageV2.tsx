@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Wrench, 
   Search, 
@@ -17,7 +16,6 @@ import {
 // Hooks
 import { getMockAssets } from '../data/mockData';
 import { useMaintenanceFiltering } from '../hooks/useMaintenanceFiltering';
-import { useMaintenanceStats } from '../hooks/useMaintenanceStats';
 import { useDeviceType, usePullToRefresh } from '../hooks/useTouch';
 import { useAssetSelection } from '../hooks/useAssetSelection';
 import { useBulkOperations } from '../hooks/useBulkOperations';
@@ -35,7 +33,7 @@ import MaintenanceHistorySection, { HistoryRecordItem } from '../components/Main
 import { PRIORITY_COLOR_MAP } from '../utils/badgeUtils';
 
 // Types
-import type { MaintenanceItem, MaintenanceFilters } from '../types/Maintenance';
+import type { MaintenanceFilters } from '../types/Maintenance';
 import type { Asset } from '../types/Asset';
 
 interface StatCardProps {
@@ -117,7 +115,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
 };
 
 const MaintenancePageV2: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const deviceType = useDeviceType();
   
   // State
@@ -159,11 +157,12 @@ const MaintenancePageV2: React.FC = () => {
         const overrides = JSON.parse(raw) as Record<string, Partial<Asset>>;
         return base.map(a => overrides[a.id] ? { ...a, ...overrides[a.id] } : a);
       }
-    } catch {}
+    } catch (e) {
+      console.error('Failed to parse asset overrides from localStorage', e);
+    }
     return base;
   });
   const { filteredAndSortedItems, allMaintenanceItems } = useMaintenanceFiltering(assets, filters);
-  const stats = useMaintenanceStats(assets);
 
   // Selection
   const {
@@ -257,7 +256,7 @@ const MaintenancePageV2: React.FC = () => {
     setShowMaintenanceModal(true);
   };
 
-  const handleMaintenanceComplete = (completedCount: number) => {
+  const handleMaintenanceComplete = () => {
     setShowMaintenanceModal(false);
     clearSelection();
   };
@@ -306,7 +305,7 @@ const MaintenancePageV2: React.FC = () => {
                       <label className="text-gray-600">Sort by</label>
                       <select
                         value={noHistorySort}
-                        onChange={(e) => setNoHistorySort(e.target.value as any)}
+                        onChange={(e) => setNoHistorySort(e.target.value as 'name' | 'serial' | 'type' | 'status' | 'location')}
                         className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="name">Name</option>
@@ -410,6 +409,7 @@ const MaintenancePageV2: React.FC = () => {
                         setSelectedAssetForBackfill(null);
                         return;
                       }
+                      const filesCount = backfillFiles ? backfillFiles.length : 0;
                       // Update local state
                       setAssets(prev => prev.map(a =>
                         a.id === selectedAssetForBackfill.id
@@ -420,7 +420,7 @@ const MaintenancePageV2: React.FC = () => {
                                 ...a.notes,
                                 {
                                   date: new Date().toISOString(),
-                                  text: backfillNotes || 'Backfilled last maintenance date',
+                                  text: backfillNotes || `Backfilled last maintenance date${filesCount ? ` with ${filesCount} attachment(s)` : ''}`,
                                   type: 'maintenance',
                                   source: 'user'
                                 }
@@ -437,7 +437,9 @@ const MaintenancePageV2: React.FC = () => {
                           lastMaintenance: backfillDate
                         };
                         localStorage.setItem('__asset_overrides__', JSON.stringify(overrides));
-                      } catch {}
+                      } catch (e) {
+                        console.error('Failed to persist asset overrides', e);
+                      }
                       setShowBackfillModal(false);
                       setSelectedAssetForBackfill(null);
                       setBackfillDate('');

@@ -5,7 +5,7 @@ import { useHorizontalScrollIndicators } from '../../../hooks/useHorizontalScrol
 import HorizontalScrollIndicators from '../HorizontalScrollIndicators';
 
 // Mock component for testing the hook
-const TestComponent: React.FC<{ dependencies?: any[] }> = ({ dependencies = [] }) => {
+const TestComponent: React.FC<{ dependencies?: unknown[] }> = ({ dependencies = [] }) => {
   const { scrollContainerRef, showLeftScroll, showRightScroll, handleScroll } = useHorizontalScrollIndicators(dependencies);
 
   return (

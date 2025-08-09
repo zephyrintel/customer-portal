@@ -13,7 +13,6 @@ interface MaintenanceBulkActionBarProps {
 
 const MaintenanceBulkActionBar: React.FC<MaintenanceBulkActionBarProps> = ({
   selectedCount,
-  selectedAssets,
   operationState,
   onClearSelection,
   onScheduleMaintenance

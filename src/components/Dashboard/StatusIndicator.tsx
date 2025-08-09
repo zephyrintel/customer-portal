@@ -1,19 +1,14 @@
 import React from 'react';
-import { DivideIcon as LucideIcon } from 'lucide-react';
 
 interface StatusIndicatorProps {
   message: string;
   type: 'success' | 'warning' | 'error' | 'info';
-  icon?: LucideIcon;
-  detail?: string;
   className?: string;
 }
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   message,
   type,
-  icon: Icon,
-  detail,
   className = ''
 }) => {
   const getTypeStyles = () => {
@@ -38,7 +33,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
         bg: 'bg-blue-50',
         border: 'border-blue-200'
       }
-    };
+    } as const;
     return styles[type];
   };
 
